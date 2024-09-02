@@ -36,4 +36,7 @@ out/
 ### VS Code ###
 .vscode/
 
+### Local Configuration ###
+.env
+src/main/resources/keystore.p12
 application.yml

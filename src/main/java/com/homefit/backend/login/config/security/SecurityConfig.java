@@ -81,6 +81,18 @@ public class SecurityConfig {
 //                        .requestMatchers("/api/user/**").permitAll()
                         .requestMatchers("/api/user/**").authenticated()
 
+                        // 아이템카테고리 전용 엔드포인트
+                        .requestMatchers("/api/itemCategory/**").authenticated()
+
+                        // 운동카테고리 전용 엔드포인트
+                        .requestMatchers("/api/ExerciseCategory/**").authenticated()
+
+                        // 운동기록 전용 엔드포인트
+                        .requestMatchers("/api/exerciseLogs/**").authenticated()
+
+                        // 운동 전용 엔드포인트
+                        .requestMatchers("/api/exercises/**").authenticated()
+
                         // 그 외 모든 요청은 인증 필요
 //                        .anyRequest().permitAll()
                         .anyRequest().authenticated()

@@ -15,27 +15,34 @@ public class UserInfo {
     private Long id;
 
     private Double height;
-
     private Double weight;
+    private Double bmi;
 
     @OneToOne
     @JoinColumn(name = "user_id")
     private User user;
 
     @Builder
-    public UserInfo(Long id, Double height, Double weight, User user) {
+    public UserInfo(Long id, User user, Double height, Double weight) {
         this.id = id;
+        this.user = user;
         this.height = height;
         this.weight = weight;
-        this.user = user;
+        this.calculateAndSetBmi();
     }
 
-    public UserInfo updateInfo(Double height, Double weight) {
-        return UserInfo.builder()
-                .id(this.id)
-                .height(height)
-                .weight(weight)
-                .user(this.user)
-                .build();
+    public void updateInfo(Double height, Double weight) {
+        this.height = height;
+        this.weight = weight;
+        this.calculateAndSetBmi();
+    }
+
+    private void calculateAndSetBmi() {
+        if (this.height != null && this.weight != null && this.height > 0) {
+            double heightInMeters = this.height / 100.0;
+            this.bmi = this.weight / (heightInMeters * heightInMeters);
+        } else {
+            this.bmi = null;
+        }
     }
 }

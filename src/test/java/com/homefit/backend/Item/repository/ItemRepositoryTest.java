@@ -1,5 +1,6 @@
 package com.homefit.backend.Item.repository;
 
+import com.homefit.backend.Item.dto.ItemModifyRequestDto;
 import com.homefit.backend.Item.dto.ItemSaveRequestDto;
 import com.homefit.backend.Item.entity.Item;
 import com.homefit.backend.Item.service.ItemService;
@@ -11,6 +12,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -36,9 +39,64 @@ class ItemRepositoryTest {
     @Test
     void saveUserTest() {
 
-        Long savedId = itemService.save(item);
+        itemService.save(item);
 
         assertThat(itemService.findAll().size()).isEqualTo(1);
     }
 
+    @DisplayName("아이템 리스트 조회 테스트")
+    @Test
+    void findItemListTest() {
+
+        itemService.save(item);
+
+        ItemSaveRequestDto requestDto = new ItemSaveRequestDto();
+        requestDto.setItemCategory(new ItemCategory("테스트용 카테고리2"));
+
+        Item newItem = requestDto.toEntity();
+
+        itemService.save(newItem);
+
+        List<Item> itemList = itemService.findAll();
+
+        assertThat(itemList.size()).isEqualTo(2);
+    }
+
+    @DisplayName("아이템 아이디 기반 단일 조회 테스트")
+    @Test
+    void findItemTest() {
+
+        Long savedId = itemService.save(item);
+
+        Long foundId = itemService.findById(savedId).getId();
+
+        assertThat(foundId).isEqualTo(savedId);
+    }
+    
+    @DisplayName("아이템 수정 테스트")
+    @Test
+    void updateItemTest() {
+
+        Long savedId = itemService.save(item);
+
+        ItemModifyRequestDto requestDto = new ItemModifyRequestDto();
+        requestDto.setItemCategory(new ItemCategory("업데이트용 카테고리"));
+
+        itemService.update(savedId, requestDto);
+
+        assertThat(itemService.findById(savedId).getItemCategory().getName()).isEqualTo("업데이트용 카테고리");
+    }
+
+    @DisplayName("아이템 삭제 테스트")
+    @Test
+    void deleteItemTest() {
+
+        Long savedId = itemService.save(item);
+
+        itemService.delete(savedId);
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            itemService.findById(savedId);
+        });
+    }
 }

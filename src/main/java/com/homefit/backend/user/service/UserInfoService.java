@@ -1,10 +1,7 @@
 package com.homefit.backend.user.service;
 
-import com.homefit.backend.login.dto.UserDto;
 import com.homefit.backend.login.entity.User;
 import com.homefit.backend.login.oauth.repository.UserRepository;
-import com.homefit.backend.login.oauth.token.AuthToken;
-import com.homefit.backend.login.oauth.token.AuthTokenProvider;
 import com.homefit.backend.user.dto.UserInfoDto;
 import com.homefit.backend.user.dto.UserPhysicalInfoDto;
 import com.homefit.backend.user.entity.UserInfo;
@@ -28,7 +25,6 @@ public class UserInfoService {
 
     private final UserRepository userRepository;
     private final UserInfoRepository userInfoRepository;
-    private final AuthTokenProvider tokenProvider;
 
     /** 사용자의 생년월일 정보만을 추가(수정)하기 위한 메서드 */
     @Transactional
@@ -54,17 +50,11 @@ public class UserInfoService {
     @Transactional
     public void updateUserPhysicalInfo(Long userId, UserPhysicalInfoDto userPhysicalInfoDto) {
         User user = getUserById(userId);
-        UserInfo existingUserInfo = userInfoRepository.findByUser(user)
-                .orElse(null);
+        UserInfo userInfo = userInfoRepository.findByUser(user)
+                .orElse(new UserInfo(null, user, null, null));
 
-        UserInfo updatedUserInfo = UserInfo.builder()
-                .id(existingUserInfo != null ? existingUserInfo.getId() : null)
-                .height(userPhysicalInfoDto.getHeight())
-                .weight(userPhysicalInfoDto.getWeight())
-                .user(user)
-                .build();
-
-        userInfoRepository.save(updatedUserInfo);
+        userInfo.updateInfo(userPhysicalInfoDto.getHeight(), userPhysicalInfoDto.getWeight());
+        userInfoRepository.save(userInfo);
     }
 
     public UserInfoDto getUserInfo(Long userId) {
@@ -97,6 +87,7 @@ public class UserInfoService {
                 .birthday(userInfo.getUser().getBirthday())
                 .height(userInfo.getHeight())
                 .weight(userInfo.getWeight())
+                .bmi(userInfo.getBmi())
                 .build();
     }
 }

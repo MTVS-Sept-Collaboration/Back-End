@@ -12,7 +12,6 @@ import java.util.List;
 
 @Getter
 @Entity
-@Table
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ExerciseCategory extends BaseEntity {
 

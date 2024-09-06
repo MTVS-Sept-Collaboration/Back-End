@@ -14,4 +14,5 @@ public class UserInfoDto {
     private LocalDate birthday;
     private Double height;
     private Double weight;
+    private Double bmi;
 }

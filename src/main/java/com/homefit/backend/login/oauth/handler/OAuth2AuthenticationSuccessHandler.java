@@ -1,5 +1,7 @@
 package com.homefit.backend.login.oauth.handler;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.homefit.backend.login.common.CookieUtil;
 import com.homefit.backend.login.config.properties.AppProperties;
 import com.homefit.backend.login.oauth.entity.RoleType;
@@ -13,14 +15,24 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.client.OAuth2AuthorizeRequest;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.Date;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 import static com.homefit.backend.login.oauth.repository.OAuth2AuthorizationRequestBasedOnCookieRepository.REDIRECT_URI_PARAM_COOKIE_NAME;
@@ -32,7 +44,9 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
     private final AuthTokenProvider tokenProvider;
     private final AppProperties appProperties;
+    private final ObjectMapper objectMapper;
     private final OAuth2AuthorizationRequestBasedOnCookieRepository authorizationRequestRepository;
+    private final OAuth2AuthorizedClientService authorizedClientService;
 
     @Override
     public void onAuthenticationSuccess(
@@ -51,27 +65,58 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
     }
 
-    protected String determineTargetUrl(HttpServletRequest request, HttpServletResponse response, Authentication authentication) {
+    @Override
+    protected String determineTargetUrl(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            Authentication authentication
+    ) {
         Optional<String> redirectUri = CookieUtil.getCookie(request, REDIRECT_URI_PARAM_COOKIE_NAME)
                 .map(Cookie::getValue);
 
-        if (redirectUri.isPresent() && !isAuthorizedRedirectUri(redirectUri.get())) {
-            throw new IllegalArgumentException("Sorry! We've got an Unauthorized Redirect URI and can't proceed with the authentication");
-        }
-
         String targetUrl = redirectUri.orElse(getDefaultTargetUrl());
 
-        // 토큰 생성
-        UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-        Date now = new Date();
-        AuthToken accessToken = tokenProvider.createAuthToken(
-                userPrincipal.getName(),
-                userPrincipal.getAuthorities().iterator().next().getAuthority(),
-                new Date(now.getTime() + appProperties.getAuth().getTokenExpiry())
-        );
+        // OAuth2AuthenticationToken에서 카카오 액세스 토큰 추출
+//        OAuth2AuthenticationToken authToken = (OAuth2AuthenticationToken) authentication;
+//        OAuth2AuthorizedClient authorizedClient = authorizedClientManager.authorize(
+//                OAuth2AuthorizeRequest.withClientRegistrationId(authToken.getAuthorizedClientRegistrationId())
+//                        .principal(authentication)
+//                        .attributes(attrs -> attrs.put(HttpServletRequest.class.getName(), request))
+//                        .attributes(attrs -> attrs.put(HttpServletResponse.class.getName(), response))
+//                        .build()
+//        );
 
+        // OAuth2AuthenticationToken에서 카카오 액세스 토큰 추출
+        OAuth2AuthenticationToken authToken = (OAuth2AuthenticationToken) authentication;
+        OAuth2AuthorizedClient authorizedClient = authorizedClientService.loadAuthorizedClient(
+                authToken.getAuthorizedClientRegistrationId(),
+                authToken.getName());
+
+        if (authorizedClient == null) {
+            throw new IllegalStateException("AuthorizedClient not found");
+        }
+
+        String kakaoAccessToken = authorizedClient.getAccessToken().getTokenValue();
+
+        // UserPrincipal에서 사용자 정보 추출
+        UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+
+        // 인증 정보 생성
+        Map<String, String> authInfo = new HashMap<>();
+        authInfo.put("accessToken", kakaoAccessToken);
+        authInfo.put("userId", userPrincipal.getId().toString());
+
+        // 인증 정보를 JSON으로 직렬화
+        String authInfoJson;
+        try {
+            authInfoJson = objectMapper.writeValueAsString(authInfo);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Failed to serialize auth info", e);
+        }
+
+        // URL 인코딩된 인증 정보를 타겟 URL에 추가
         return UriComponentsBuilder.fromUriString(targetUrl)
-                .queryParam("token", accessToken.getToken())
+                .queryParam("auth_info", URLEncoder.encode(authInfoJson, StandardCharsets.UTF_8))
                 .build().toUriString();
     }
 

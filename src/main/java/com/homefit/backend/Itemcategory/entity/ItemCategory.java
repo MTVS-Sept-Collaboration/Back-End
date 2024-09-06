@@ -1,4 +1,4 @@
-package com.homefit.backend.Itemcategory.entity;
+package com.homefit.backend.itemcategory.entity;
 
 
 import com.homefit.backend.global.entity.BaseEntity;
@@ -8,13 +8,13 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Getter
-@Table
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ItemCategory extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "item_category_id")
     private Long id;
 
     @Column(name = "name", nullable = false)

@@ -11,12 +11,11 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@ToString
 public class UserDto {
     private Long id;
-    private String userName; // 닉네임
-    private String email; // 이메일
-    private String nickName; // 닉네임
+    private String kakaoId;
+    private String nickName;
+    private LocalDate birthday;
     private String profileImage;
     private RoleType role;
     private LocalDateTime createdAt;

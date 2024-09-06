@@ -12,10 +12,13 @@ public class JwtConfig {
     @Value("${jwt.secret}")
     private String secret;
 
+    @Value("${jwt.expiration}")
+    private long expiration;
+
     @Bean
     public AuthTokenProvider authTokenProvider() {
         // secret 값을 Base64 디코딩하여 byte 배열로 변환
         byte[] secretKey = Base64.getUrlDecoder().decode(secret);
-        return new AuthTokenProvider(secretKey);
+        return new AuthTokenProvider(secretKey, expiration);
     }
 }

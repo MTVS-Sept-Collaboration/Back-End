@@ -21,8 +21,7 @@ import java.util.Map;
 @Builder
 public class UserPrincipal implements OAuth2User, UserDetails, OidcUser {
     private Long id;
-    private String userName;
-    private String email;
+    private String kakaoId;
     private String nickName;
     private String profileImage;
     private RoleType role;
@@ -45,12 +44,12 @@ public class UserPrincipal implements OAuth2User, UserDetails, OidcUser {
 
     @Override
     public String getName() {
-        return userName;
+        return kakaoId;
     }
 
     @Override
     public String getUsername() {
-        return userName;
+        return kakaoId;
     }
 
     @Override
@@ -96,10 +95,10 @@ public class UserPrincipal implements OAuth2User, UserDetails, OidcUser {
     public static UserPrincipal create(User user) {
         return UserPrincipal.builder()
                 .id(user.getId())
-                .userName(user.getUserName())
-                .email(user.getEmail())
+                .kakaoId(user.getKakaoId())
                 .nickName(user.getNickName())
                 .profileImage(user.getProfileImage())
+                .role(user.getRole())
                 .authorities(Collections.singletonList(new SimpleGrantedAuthority(RoleType.USER.getCode())))
                 .build();
     }

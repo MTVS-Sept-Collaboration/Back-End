@@ -21,22 +21,9 @@ public class AuthToken {
         this.key = key;
     }
 
-    public AuthToken(String id, Date expiry, Key key) {
-        this.key = key;
-        this.token = createAuthToken(id, expiry);
-    }
-
     public AuthToken(String id, String role, Date expiry, Key key) {
         this.key = key;
         this.token = createAuthToken(id, role, expiry);
-    }
-
-    private String createAuthToken(String id, Date expiry) {
-        return Jwts.builder()
-                .setSubject(id)
-                .signWith(key, SignatureAlgorithm.HS256)
-                .setExpiration(expiry)
-                .compact();
     }
 
     private String createAuthToken(String id, String role, Date expiry) {
@@ -72,21 +59,6 @@ public class AuthToken {
             log.error("Unsupported JWT token.", e);
         } catch (IllegalArgumentException e) {
             log.error("JWT token compact of handler are invalid.", e);
-        }
-
-        return null;
-    }
-
-    public Claims getExpiredTokenClaims() {
-        try {
-            Jwts.parserBuilder()
-                    .setSigningKey(key)
-                    .build()
-                    .parseClaimsJws(token)
-                    .getBody();
-        } catch (ExpiredJwtException e) {
-            log.info("Expired JWT token.");
-            return e.getClaims();
         }
 
         return null;

@@ -4,6 +4,7 @@ import com.homefit.backend.login.oauth.entity.RoleType;
 import com.homefit.backend.login.oauth.exception.TokenValidFailedException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.security.Keys;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -21,15 +22,18 @@ import java.util.stream.Collectors;
 public class AuthTokenProvider {
 
     private final Key key;
+    @Getter
+    private final long expiration;
     private static final String AUTHORITIES_KEY = "role";
 
-    public AuthTokenProvider(byte[] secretKey) {
+    public AuthTokenProvider(byte[] secretKey, long expiration) {
         this.key = Keys.hmacShaKeyFor(secretKey);
+        this.expiration = expiration;
     }
 
-//    public AuthToken createAuthToken(String id, Date expiry) {
-//        return new AuthToken(id, expiry, key);
-//    }
+    public AuthToken createAuthToken(String id, String role) {
+        return createAuthToken(id, role, new Date(System.currentTimeMillis() + expiration));
+    }
 
     public AuthToken createAuthToken(String id, String role, Date expiry) {
         if (id == null || id.isEmpty()) {

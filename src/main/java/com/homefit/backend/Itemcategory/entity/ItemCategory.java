@@ -8,7 +8,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Getter
-@Table
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ItemCategory extends BaseEntity {

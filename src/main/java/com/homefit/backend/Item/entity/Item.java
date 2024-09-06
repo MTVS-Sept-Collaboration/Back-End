@@ -1,5 +1,6 @@
 package com.homefit.backend.Item.entity;
 
+import com.homefit.backend.Item.dto.ItemModifyRequestDto;
 import com.homefit.backend.itemcategory.entity.ItemCategory;
 import jakarta.persistence.*;
 import lombok.*;
@@ -24,5 +25,9 @@ public class Item {
     @Builder
     public Item(ItemCategory itemCategory) {
         this.itemCategory = itemCategory;
+    }
+
+    public void update(ItemModifyRequestDto requestDto) {
+        this.itemCategory = requestDto.getItemCategory();
     }
 }

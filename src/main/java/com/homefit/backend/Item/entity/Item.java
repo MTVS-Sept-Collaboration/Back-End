@@ -2,10 +2,7 @@ package com.homefit.backend.Item.entity;
 
 import com.homefit.backend.itemcategory.entity.ItemCategory;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*;
 
 import static jakarta.persistence.FetchType.*;
 
@@ -23,4 +20,9 @@ public class Item {
     @ManyToOne(fetch = LAZY)
     @JoinColumn(name = "item_category_id") // FK
     private ItemCategory itemCategory;
+
+    @Builder
+    public Item(ItemCategory itemCategory) {
+        this.itemCategory = itemCategory;
+    }
 }

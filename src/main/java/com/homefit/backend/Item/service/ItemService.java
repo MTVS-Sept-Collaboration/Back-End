@@ -1,5 +1,6 @@
 package com.homefit.backend.Item.service;
 
+import com.homefit.backend.Item.dto.ItemModifyRequestDto;
 import com.homefit.backend.Item.entity.Item;
 import com.homefit.backend.Item.repository.ItemRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,15 @@ public class ItemService {
 
     public List<Item> findAll() {
         return itemRepository.findAll();
+    }
+
+    public Long update(Long id, ItemModifyRequestDto requestDto) {
+        Item item = itemRepository.findById(id)
+                .orElseThrow(IllegalArgumentException::new);
+
+        item.update(requestDto);
+
+        return item.getId();
     }
 
     public void delete(Long id) {

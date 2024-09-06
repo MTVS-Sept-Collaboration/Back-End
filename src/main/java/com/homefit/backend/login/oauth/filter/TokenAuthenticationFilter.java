@@ -30,29 +30,38 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(
-            @NonNull HttpServletRequest request,
-            @NonNull HttpServletResponse response,
-            @NonNull FilterChain filterChain
+            HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain filterChain
     ) throws ServletException, IOException {
-        String tokenValue = CookieUtil.getCookie(request, ACCESS_TOKEN)
-                .map(Cookie::getValue)
-                .orElse(null);
+        String tokenValue = getTokenFromRequest(request);
+        log.debug("Received token: {}", tokenValue);
 
         if (StringUtils.hasText(tokenValue)) {
-            AuthToken token = tokenProvider.convertAuthToken(tokenValue);
-            if (token.validate()) {
-                Authentication authentication = tokenProvider.getAuthentication(token);
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-
-                // SecurityContext에 토큰 정보 저장
-                if (authentication.getPrincipal() instanceof UserPrincipal userPrincipal) {
-                    SecurityContextHolder.getContext().setAuthentication(
-                            new UsernamePasswordAuthenticationToken(userPrincipal, token, authentication.getAuthorities())
-                    );
+            try {
+                AuthToken token = tokenProvider.convertAuthToken(tokenValue);
+                if (token.validate()) {
+                    Authentication authentication = tokenProvider.getAuthentication(token);
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                    log.debug("Set Authentication to security context for '{}', uri: {}", authentication.getName(), request.getRequestURI());
+                } else {
+                    log.debug("Invalid token");
                 }
+            } catch (Exception e) {
+                log.error("Could not set user authentication in security context", e);
             }
+        } else {
+            log.debug("No token found in request");
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private String getTokenFromRequest(HttpServletRequest request) {
+        String bearerToken = request.getHeader("Authorization");
+        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
+            return bearerToken.substring(7);
+        }
+        return null;
     }
 }

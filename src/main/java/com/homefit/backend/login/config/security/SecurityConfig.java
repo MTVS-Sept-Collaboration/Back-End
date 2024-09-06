@@ -1,5 +1,7 @@
 package com.homefit.backend.login.config.security;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.homefit.backend.login.config.properties.AppProperties;
 import com.homefit.backend.login.config.properties.CorsProperties;
 import com.homefit.backend.login.oauth.entity.RoleType;
 import com.homefit.backend.login.oauth.exception.RestAuthenticationEntryPoint;
@@ -21,6 +23,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.client.*;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.client.RestTemplate;
@@ -37,12 +40,14 @@ public class SecurityConfig {
     private final AuthTokenProvider tokenProvider;
     private final CustomOAuth2UserService oAuth2UserService;
     private final OAuth2AuthorizationRequestBasedOnCookieRepository authorizationRequestRepository;
-    private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
-    private final OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
     private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(
+            HttpSecurity http,
+            OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler,
+            OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler
+    ) throws Exception {
         http
                 .cors(Customizer.withDefaults())  // CORS 설정 적용
                 .csrf(AbstractHttpConfigurer::disable) // CSRF 비활성화 (RestAPI 이므로)
@@ -66,16 +71,22 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui/**").permitAll()
 
                         // 카카오 로그인 전용 엔드포인트
-                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/", "/login/**", "/oauth2/**", "/api/auth/**").permitAll()
                         .requestMatchers("/oauth2/authorization/**", "/login/oauth2/code/**").permitAll()
 
                         // 관리자 전용 엔드포인트
                         .requestMatchers("/api/admin/**").hasAuthority(RoleType.ADMIN.getCode())
 
+                        // 사용자 정보 전용 엔드포인트
+//                        .requestMatchers("/api/user/**").permitAll()
+                        .requestMatchers("/api/user/**").authenticated()
+
                         // 그 외 모든 요청은 인증 필요
-                        .anyRequest().permitAll()
+//                        .anyRequest().permitAll()
+                        .anyRequest().authenticated()
                 )
-                .addFilterBefore(tokenAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class) // 토큰 인증 필터 추가
+                .addFilterBefore(new TokenAuthenticationFilter(tokenProvider), UsernamePasswordAuthenticationFilter.class) // 토큰 인증 필터 추가
+//                .addFilterBefore(tokenAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class) // 토큰 인증 필터 추가
                 .oauth2Login(oauth2 -> oauth2
                         .authorizationEndpoint(authorization -> authorization
                                 .baseUri("/oauth2/authorization") // OAuth2 로그인 시작 URI
@@ -108,12 +119,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        if (corsProperties.getAllowedOrigins() != null && !corsProperties.getAllowedOrigins().isEmpty()) {
-            for (String allowedOrigin : corsProperties.getAllowedOrigins()) {
-                config.addAllowedOriginPattern(allowedOrigin);
-            }
-        }
-
+        config.setAllowedOriginPatterns(corsProperties.getAllowedOrigins());
         config.setAllowedMethods(corsProperties.getAllowedMethods());
         config.setAllowedHeaders(corsProperties.getAllowedHeaders());
         config.setAllowCredentials(true);
@@ -138,5 +144,30 @@ public class SecurityConfig {
     @Bean
     public RestTemplate restTemplate() {
         return new RestTemplate();
+    }
+
+    /*
+     * OAuth2 인증 성공 핸들러 지정
+     * */
+    @Bean
+    public OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler(
+            AuthTokenProvider tokenProvider,
+            AppProperties appProperties,
+            ObjectMapper objectMapper,
+            OAuth2AuthorizationRequestBasedOnCookieRepository authorizationRequestRepository,
+            OAuth2AuthorizedClientService authorizedClientService
+    ) {
+        return new OAuth2AuthenticationSuccessHandler(
+                tokenProvider, appProperties, objectMapper,
+                authorizationRequestRepository, authorizedClientService
+        );
+    }
+
+    /*
+     * OAuth2 인증 실패 핸들러 지정
+     * */
+    @Bean
+    public OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler() {
+        return new OAuth2AuthenticationFailureHandler(authorizationRequestRepository);
     }
 }

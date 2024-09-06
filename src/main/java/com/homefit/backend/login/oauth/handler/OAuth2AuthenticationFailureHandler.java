@@ -1,7 +1,7 @@
 package com.homefit.backend.login.oauth.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.homefit.backend.login.common.ApiResponse;
+import com.homefit.backend.login.common.CustomApiResponse;
 import com.homefit.backend.login.common.CookieUtil;
 import com.homefit.backend.login.oauth.repository.OAuth2AuthorizationRequestBasedOnCookieRepository;
 import jakarta.servlet.ServletException;
@@ -18,7 +18,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
 
-import static com.homefit.backend.login.common.ApiResponse.UNAUTHORIZED;
+import static com.homefit.backend.login.common.CustomApiResponse.UNAUTHORIZED;
 import static com.homefit.backend.login.oauth.repository.OAuth2AuthorizationRequestBasedOnCookieRepository.REDIRECT_URI_PARAM_COOKIE_NAME;
 
 @Component
@@ -78,11 +78,11 @@ public class OAuth2AuthenticationFailureHandler extends SimpleUrlAuthenticationF
                 ? ((OAuth2AuthenticationException) exception).getError().getErrorCode()
                 : exception.getMessage();
 
-        ApiResponse<?> apiResponse = new ApiResponse<>(
+        CustomApiResponse<?> customApiResponse = new CustomApiResponse<>(
                 UNAUTHORIZED.value(),
                 errorMessage,
                 null
         );
-        response.getWriter().write(objectMapper.writeValueAsString(apiResponse));
+        response.getWriter().write(objectMapper.writeValueAsString(customApiResponse));
     }
 }

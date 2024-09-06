@@ -1,6 +1,5 @@
 package com.homefit.backend.login.oauth.service;
 
-import com.homefit.backend.login.dto.UserDto;
 import com.homefit.backend.login.entity.User;
 import com.homefit.backend.login.oauth.entity.ProviderType;
 import com.homefit.backend.login.oauth.entity.RoleType;
@@ -10,9 +9,6 @@ import com.homefit.backend.login.oauth.info.OAuth2UserInfoFactory;
 import com.homefit.backend.login.oauth.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.authentication.InternalAuthenticationServiceException;
-import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
@@ -20,7 +16,6 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.Collections;
 
 @Slf4j
 @Service
@@ -32,102 +27,56 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
         OAuth2User oAuth2User = super.loadUser(userRequest);
-        log.debug("OAuth2User loaded: {}", oAuth2User);
 
         try {
-            return processOAuth2User(userRequest, oAuth2User);
-        } catch (AuthenticationException ex) {
-            throw ex;
+            return this.processOAuth2User(oAuth2User);
         } catch (Exception ex) {
-            log.error("Error occurred while processing OAuth2 user", ex);
-            throw new InternalAuthenticationServiceException(ex.getMessage(), ex.getCause());
+            log.error("Error while processing OAuth2User", ex);
+            throw ex;
         }
     }
 
-    private UserPrincipal processOAuth2User(
-            OAuth2UserRequest userRequest,
-            OAuth2User oAuth2User
-    ) {
+    private OAuth2User processOAuth2User(OAuth2User oAuth2User) {
         OAuth2UserInfo userInfo = OAuth2UserInfoFactory.getOAuth2UserInfo(ProviderType.KAKAO, oAuth2User.getAttributes());
 
-        log.info("Processing OAuth2User: {}", userInfo.getId());
-        log.info("OAuth2User attributes: {}", oAuth2User.getAttributes());
+        String kakaoId = userInfo.getId();
+        log.info("Processing OAuth2User: {}", kakaoId);
 
-        User user = userRepository.findByUserName(userInfo.getId()).orElse(null);
+        User user = userRepository.findByKakaoId(kakaoId)
+                .map(existingUser -> updateExistingUser(existingUser, userInfo))
+                .orElseGet(() -> createNewUser(userInfo));
 
-        if (user != null) {
-            log.info("Existing user found: {}", user);
-            if (!user.getUserStatus()) {
-                // 탈퇴한 사용자가 다시 로그인한 경우
-                log.info("Attempting to reactivate user account. User details: {}", user);
-                UserDto userDto = updateUser(user, userInfo);
-                user = userRepository.save(convertToEntity(userDto));
-                log.info("User after reactivation: {}", user);
-            } else {
-                UserDto userDto = updateUser(user, userInfo);
-                user = userRepository.save(convertToEntity(userDto));
-            }
-        } else {
-            log.info("Creating new user for KakaoId: {}", userInfo.getId());
-            UserDto userDto = createUser(userInfo);
-            user = userRepository.save(convertToEntity(userDto));
-        }
-
-        // UserPrincipal 생성 시 userId를 name으로 설정
-        UserPrincipal userPrincipal = UserPrincipal.builder()
-                .id(user.getId())
-                .userName(user.getUserName())
-                .email(user.getEmail())
-                .nickName(user.getNickName())
-                .profileImage(user.getProfileImage())
-                .attributes(oAuth2User.getAttributes())
-                .authorities(Collections.singletonList(new SimpleGrantedAuthority(user.getRole().getCode())))
-                .build();
-
-        log.info("Processed user: id={}, userName={}, email={}, nickName={}, profileImage={}", user.getId(), user.getUserName(), user.getEmail(), user.getNickName(), user.getProfileImage());
-        return userPrincipal;
+        return UserPrincipal.create(user, oAuth2User.getAttributes());
     }
 
-    private UserDto createUser(OAuth2UserInfo userInfo) {
-        return UserDto.builder()
-                .userName(userInfo.getId())
-                .email(userInfo.getEmail())
+    private User createNewUser(OAuth2UserInfo userInfo) {
+        User user = User.builder()
+                .kakaoId(userInfo.getId())
                 .nickName(userInfo.getName())
                 .profileImage(userInfo.getImageUrl())
-                .role(RoleType.USER)
+                .role(RoleType.USER)  // 기본 역할 설정
+                .userStatus(true)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
-                .userStatus(true)
                 .build();
+
+        return userRepository.save(user);
     }
 
-    private UserDto updateUser(User user, OAuth2UserInfo userInfo) {
-        return UserDto.builder()
-                .id(user.getId())
-                .userName(user.getUserName())
-                .email(userInfo.getEmail() != null ? userInfo.getEmail() : user.getEmail())
-                .nickName(userInfo.getName() != null ? userInfo.getName() : user.getNickName())
-                .profileImage(userInfo.getImageUrl() != null ? userInfo.getImageUrl() : user.getProfileImage())
-                .role(user.getRole())
-                .createdAt(user.getCreatedAt())
+    private User updateExistingUser(User existingUser, OAuth2UserInfo userInfo) {
+        User updatedUser = User.builder()
+                .id(existingUser.getId())
+                .kakaoId(existingUser.getKakaoId())
+                .nickName(userInfo.getName())
+                .profileImage(userInfo.getImageUrl())
+                .role(existingUser.getRole())
+                .userStatus(existingUser.getUserStatus())
+                .createdAt(existingUser.getCreatedAt())
                 .updatedAt(LocalDateTime.now())
-                .firedAt(null)
-                .userStatus(true)
-                .refreshToken(user.getRefreshToken())
+                .firedAt(existingUser.getFiredAt())
+                .refreshToken(existingUser.getRefreshToken())
                 .build();
-    }
 
-    private User convertToEntity(UserDto userDto) {
-        return new User(
-                userDto.getUserName(),
-                userDto.getEmail(),
-                userDto.getNickName(),
-                userDto.getProfileImage(),
-                userDto.getCreatedAt(),
-                userDto.getUpdatedAt(),
-                userDto.getFiredAt(),
-                userDto.getUserStatus(),
-                userDto.getRefreshToken()
-        );
+        return userRepository.save(updatedUser);
     }
 }

@@ -1,22 +1,19 @@
 package com.homefit.backend.login.oauth.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.homefit.backend.login.common.ApiResponse;
+import com.homefit.backend.login.common.CustomApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
-import static com.homefit.backend.login.common.ApiResponse.UNAUTHORIZED;
+import static com.homefit.backend.login.common.CustomApiResponse.UNAUTHORIZED;
 
 @Slf4j
 @Component
@@ -37,11 +34,11 @@ public class TokenAccessDeniedHandler implements AccessDeniedHandler {
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("UTF-8");
 
-        ApiResponse<?> apiResponse = new ApiResponse<>(
+        CustomApiResponse<?> customApiResponse = new CustomApiResponse<>(
                 UNAUTHORIZED.value(),
                 accessDeniedException.getMessage(),
                 null
         );
-        response.getWriter().print(objectMapper.writeValueAsString(apiResponse));
+        response.getWriter().print(objectMapper.writeValueAsString(customApiResponse));
     }
 }

@@ -1,9 +1,9 @@
-package com.homefit.backend.category.entity;
+package com.homefit.backend.Itemcategory.entity;
 
 
+import com.homefit.backend.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -11,17 +11,16 @@ import lombok.NoArgsConstructor;
 @Table
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-public class Category {
+public class ItemCategory extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "name")
+    @Column(name = "name", nullable = false)
     private String name;
 
-    public Category(String name) {
+    public ItemCategory(String name) {
         this.name = name;
     }
 

@@ -76,24 +76,57 @@ public class KakaoAuthService {
     }
 
     private UserDto processUserRegistration(OAuth2UserInfo userInfo) {
-        // 기존 사용자 확인
-        User user = userRepository.findByKakaoId(userInfo.getId())
-                .map(existingUser -> {
-                    existingUser.updateProfile(userInfo.getName(), userInfo.getImageUrl());
-                    return existingUser;
-                })
-                .orElseGet(() -> User.builder()
-                        .kakaoId(userInfo.getId())
-                        .nickName(userInfo.getName())
-                        .profileImage(userInfo.getImageUrl())
-                        .role(RoleType.USER)
-                        .createdAt(LocalDateTime.now())
-                        .updatedAt(LocalDateTime.now())
-                        .userStatus(true)
-                        .build());
+        return userRepository.findByKakaoId(userInfo.getId())
+                .map(existingUser -> updateExistingUser(existingUser, userInfo))
+                .orElseGet(() -> createNewUser(userInfo));
+    }
 
-        User savedUser = userRepository.save(user);
+    private UserDto createNewUser(OAuth2UserInfo userInfo) {
+        UserDto newUserDto = UserDto.builder()
+                .kakaoId(userInfo.getId())
+                .nickName(userInfo.getName())
+                .profileImage(userInfo.getImageUrl())
+                .role(RoleType.USER)
+                .userStatus(true)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+
+        User savedUser = userRepository.save(convertToEntity(newUserDto));
         return convertToDto(savedUser);
+    }
+
+    private UserDto updateExistingUser(User existingUser, OAuth2UserInfo userInfo) {
+        UserDto updatedUserDto = UserDto.builder()
+                .id(existingUser.getId())
+                .kakaoId(existingUser.getKakaoId())
+                .nickName(userInfo.getName())
+                .profileImage(userInfo.getImageUrl())
+                .role(existingUser.getRole())
+                .userStatus(existingUser.getUserStatus())
+                .createdAt(existingUser.getCreatedAt())
+                .updatedAt(LocalDateTime.now())
+                .firedAt(existingUser.getFiredAt())
+                .refreshToken(existingUser.getRefreshToken())
+                .build();
+
+        User savedUser = userRepository.save(convertToEntity(updatedUserDto));
+        return convertToDto(savedUser);
+    }
+
+    private User convertToEntity(UserDto userDto) {
+        return User.builder()
+                .id(userDto.getId())
+                .kakaoId(userDto.getKakaoId())
+                .nickName(userDto.getNickName())
+                .profileImage(userDto.getProfileImage())
+                .role(userDto.getRole())
+                .userStatus(userDto.getUserStatus())
+                .createdAt(userDto.getCreatedAt())
+                .updatedAt(userDto.getUpdatedAt())
+                .firedAt(userDto.getFiredAt())
+                .refreshToken(userDto.getRefreshToken())
+                .build();
     }
 
     private UserDto convertToDto(User user) {

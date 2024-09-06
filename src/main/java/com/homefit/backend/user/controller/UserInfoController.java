@@ -25,7 +25,7 @@ import java.time.LocalDate;
 @RestController
 @RequestMapping("/api/user")
 @RequiredArgsConstructor
-@Tag(name = "User Info")
+@Tag(name = "사용자 정보", description = "사용자 정보 API")
 @SecurityRequirement(name = "bearerAuth")
 public class UserInfoController {
 

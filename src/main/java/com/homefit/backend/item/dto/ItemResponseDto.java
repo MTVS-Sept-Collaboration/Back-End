@@ -7,7 +7,6 @@ import lombok.Setter;
 
 @Data
 @NoArgsConstructor
-@Setter
 public class ItemResponseDto {
 
     private Long id;

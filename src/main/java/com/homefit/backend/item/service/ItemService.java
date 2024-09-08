@@ -1,8 +1,8 @@
-package com.homefit.backend.Item.service;
+package com.homefit.backend.item.service;
 
-import com.homefit.backend.Item.dto.ItemModifyRequestDto;
-import com.homefit.backend.Item.entity.Item;
-import com.homefit.backend.Item.repository.ItemRepository;
+import com.homefit.backend.item.dto.ItemModifyRequestDto;
+import com.homefit.backend.item.entity.Item;
+import com.homefit.backend.item.repository.ItemRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

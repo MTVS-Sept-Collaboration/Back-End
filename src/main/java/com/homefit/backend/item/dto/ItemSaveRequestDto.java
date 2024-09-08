@@ -1,6 +1,6 @@
-package com.homefit.backend.Item.dto;
+package com.homefit.backend.item.dto;
 
-import com.homefit.backend.Item.entity.Item;
+import com.homefit.backend.item.entity.Item;
 import com.homefit.backend.itemcategory.entity.ItemCategory;
 import lombok.AllArgsConstructor;
 import lombok.Data;

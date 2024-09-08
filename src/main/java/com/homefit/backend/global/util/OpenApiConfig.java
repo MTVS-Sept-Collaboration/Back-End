@@ -8,7 +8,6 @@ import io.swagger.v3.oas.models.info.License;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
-import io.swagger.v3.oas.models.tags.Tag;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -41,11 +40,6 @@ public class OpenApiConfig {
                 .servers(List.of(
                         new Server().url("https://localhost:8080").description("Local Server"), // 로컬 서버
                         new Server().url("https://homefit.play").description("Production Server") // 프로덕션 서버
-                ))
-                // API 태그를 지정하여 엔드포인트들을 그룹화함
-                .tags(List.of(
-                        new Tag().name("Kakao Authentication").description("카카오 인증 관련 API Controller"),
-                        new Tag().name("User Info").description("사용자 정보 관련 API Controller")
                 ));
     }
 }

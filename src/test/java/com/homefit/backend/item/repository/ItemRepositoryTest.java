@@ -1,11 +1,10 @@
-package com.homefit.backend.Item.repository;
+package com.homefit.backend.item.repository;
 
-import com.homefit.backend.Item.dto.ItemModifyRequestDto;
-import com.homefit.backend.Item.dto.ItemSaveRequestDto;
-import com.homefit.backend.Item.entity.Item;
-import com.homefit.backend.Item.service.ItemService;
+import com.homefit.backend.item.dto.ItemModifyRequestDto;
+import com.homefit.backend.item.dto.ItemSaveRequestDto;
+import com.homefit.backend.item.entity.Item;
+import com.homefit.backend.item.service.ItemService;
 import com.homefit.backend.itemcategory.entity.ItemCategory;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -72,7 +71,7 @@ class ItemRepositoryTest {
 
         assertThat(foundId).isEqualTo(savedId);
     }
-    
+
     @DisplayName("아이템 수정 테스트")
     @Test
     void updateItemTest() {

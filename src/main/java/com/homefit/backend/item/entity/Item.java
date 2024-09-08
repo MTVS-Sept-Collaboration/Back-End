@@ -1,6 +1,6 @@
-package com.homefit.backend.Item.entity;
+package com.homefit.backend.item.entity;
 
-import com.homefit.backend.Item.dto.ItemModifyRequestDto;
+import com.homefit.backend.item.dto.ItemModifyRequestDto;
 import com.homefit.backend.itemcategory.entity.ItemCategory;
 import jakarta.persistence.*;
 import lombok.*;

@@ -1,4 +1,4 @@
-package com.homefit.backend.Itemcategory.dto;
+package com.homefit.backend.itemcategory.dto;
 
 
 import io.swagger.v3.oas.annotations.media.Schema;

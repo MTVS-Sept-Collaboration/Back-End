@@ -1,4 +1,4 @@
-package com.homefit.backend.Itemcategory.entity;
+package com.homefit.backend.itemcategory.entity;
 
 
 import com.homefit.backend.global.entity.BaseEntity;
@@ -14,6 +14,7 @@ public class ItemCategory extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "item_category_id")
     private Long id;
 
     @Column(name = "name", nullable = false)

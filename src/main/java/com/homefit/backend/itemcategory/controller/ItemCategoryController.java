@@ -1,9 +1,9 @@
-package com.homefit.backend.Itemcategory.controller;
+package com.homefit.backend.itemcategory.controller;
 
-import com.homefit.backend.Itemcategory.dto.ItemCategoryRequest;
-import com.homefit.backend.Itemcategory.dto.ItemCategoryResponse;
-import com.homefit.backend.Itemcategory.entity.ItemCategory;
-import com.homefit.backend.Itemcategory.service.ItemCategoryService;
+import com.homefit.backend.itemcategory.dto.ItemCategoryRequest;
+import com.homefit.backend.itemcategory.dto.ItemCategoryResponse;
+import com.homefit.backend.itemcategory.entity.ItemCategory;
+import com.homefit.backend.itemcategory.service.ItemCategoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;

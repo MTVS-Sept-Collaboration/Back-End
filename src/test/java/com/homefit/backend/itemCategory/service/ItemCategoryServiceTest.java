@@ -1,10 +1,10 @@
 package com.homefit.backend.itemCategory.service;
 
-import com.homefit.backend.Itemcategory.dto.ItemCategoryRequest;
-import com.homefit.backend.Itemcategory.dto.ItemCategoryResponse;
-import com.homefit.backend.Itemcategory.entity.ItemCategory;
-import com.homefit.backend.Itemcategory.repository.ItemCategoryRepository;
-import com.homefit.backend.Itemcategory.service.ItemCategoryService;
+import com.homefit.backend.itemcategory.dto.ItemCategoryRequest;
+import com.homefit.backend.itemcategory.dto.ItemCategoryResponse;
+import com.homefit.backend.itemcategory.entity.ItemCategory;
+import com.homefit.backend.itemcategory.repository.ItemCategoryRepository;
+import com.homefit.backend.itemcategory.service.ItemCategoryService;
 
 import com.homefit.backend.global.exception.model.ConflictException;
 import org.assertj.core.api.Assertions;

@@ -1,0 +1,7 @@
+package com.homefit.backend.item.repository;
+
+import com.homefit.backend.item.entity.Item;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface ItemRepository extends JpaRepository<Item, Long> {
+}

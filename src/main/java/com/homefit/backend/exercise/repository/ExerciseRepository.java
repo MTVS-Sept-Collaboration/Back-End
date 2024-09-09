@@ -2,7 +2,7 @@ package com.homefit.backend.exercise.repository;
 
 
 import com.homefit.backend.exercise.entity.Exercise;
-import com.homefit.backend.exerciseCategory.entity.ExerciseCategory;
+import com.homefit.backend.category.exercise.entity.ExerciseCategory;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

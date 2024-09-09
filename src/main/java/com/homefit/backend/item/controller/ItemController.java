@@ -55,6 +55,20 @@ public class ItemController {
         return ResponseEntity.ok(responseDto);
     }
 
+    // 카테고리 기반 아이템 조회
+    @Operation(summary = "카테고리 기반 아이템 조회", description = "아이템을 아이템 카테고리 기반으로 조회합니다.")
+    @GetMapping("/{categoryName}")
+    public ResponseEntity<List<ItemListResponseDto>> getItemsByCategory(@PathVariable String categoryName) {
+
+        List<Item> itemList = itemService.findByItemCategory(categoryName);
+
+        List<ItemListResponseDto> responseDtoList = itemList.stream()
+                .map(item -> new ItemListResponseDto(item.getId(), item.getItemCategory()))
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(responseDtoList);
+    }
+
     // 아이템 전체 조회
     @Operation(summary = "아이템 전체 조회", description = "아이템을 전체를 조회합니다.")
     @GetMapping

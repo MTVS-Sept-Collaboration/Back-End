@@ -40,3 +40,4 @@ out/
 .env
 src/main/resources/keystore.p12
 application.yml
+application.log

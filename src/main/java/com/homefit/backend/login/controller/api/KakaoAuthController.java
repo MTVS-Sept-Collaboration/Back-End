@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
-@Tag(name = "Kakao Authentication")
+@Tag(name = "카카오 로그인/회원가입", description = "카카오 인증 관련 API")
 public class KakaoAuthController {
 
     private final KakaoAuthService kakaoAuthService;

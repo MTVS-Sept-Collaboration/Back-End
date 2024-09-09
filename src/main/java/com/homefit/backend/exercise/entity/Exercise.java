@@ -1,7 +1,6 @@
 package com.homefit.backend.exercise.entity;
 
-import com.homefit.backend.exerciseCategory.entity.ExerciseCategory;
-import com.homefit.backend.exerciseLog.entity.ExerciseLog;
+import com.homefit.backend.category.exercise.entity.ExerciseCategory;
 import com.homefit.backend.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;

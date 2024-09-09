@@ -1,7 +1,7 @@
 package com.homefit.backend.item.dto;
 
 import com.homefit.backend.item.entity.Item;
-import com.homefit.backend.itemcategory.entity.ItemCategory;
+import com.homefit.backend.category.item.entity.ItemCategory;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

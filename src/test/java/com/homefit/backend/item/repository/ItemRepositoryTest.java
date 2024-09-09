@@ -4,16 +4,14 @@ import com.homefit.backend.item.dto.ItemModifyRequestDto;
 import com.homefit.backend.item.dto.ItemSaveRequestDto;
 import com.homefit.backend.item.entity.Item;
 import com.homefit.backend.item.service.ItemService;
-import com.homefit.backend.itemcategory.entity.ItemCategory;
-import com.homefit.backend.itemcategory.repository.ItemCategoryRepository;
+import com.homefit.backend.category.item.entity.ItemCategory;
+import com.homefit.backend.category.item.repository.ItemCategoryRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;

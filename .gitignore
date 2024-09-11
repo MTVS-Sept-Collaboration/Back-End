@@ -39,5 +39,11 @@ out/
 ### Local Configuration ###
 .env
 src/main/resources/keystore.p12
-application.yml
 application.log
+mysql_data
+logs
+application.yml
+application-dev.yml
+application-prod.yml
+docker-compose.yml
+Dockerfile

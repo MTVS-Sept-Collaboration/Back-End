@@ -1,4 +1,4 @@
-package com.homefit.backend.exerciselog;
+package com.homefit.backend.exerciselog.service;
 
 
 import com.homefit.backend.exercise.entity.Exercise;
@@ -8,7 +8,6 @@ import com.homefit.backend.category.exercise.repository.ExerciseCategoryReposito
 import com.homefit.backend.exerciselog.dto.ExerciseLogRequest;
 import com.homefit.backend.exerciselog.dto.ExerciseLogResponse;
 import com.homefit.backend.exerciselog.repository.ExerciseLogRepository;
-import com.homefit.backend.exerciselog.service.ExerciseLogService;
 import com.homefit.backend.login.entity.User;
 import com.homefit.backend.login.oauth.entity.RoleType;
 import com.homefit.backend.login.oauth.repository.UserRepository;

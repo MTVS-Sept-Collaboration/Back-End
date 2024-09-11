@@ -1,0 +1,109 @@
+spring:
+  web:
+    resources:
+      add-mappings: false
+      chain:
+        cache: true
+      static-locations: classpath:/static/
+
+  # 데이터 소스 설정
+  datasource:
+#    driver-class-name: com.mysql.cj.jdbc.Driver # MySQL JDBC 드라이버 클래스 이름 설정
+    url: jdbc:mysql://localhost:3306/homefit # MySQL 데이터베이스 연결 URL 설정
+    username: homefit # MySQL 데이터베이스 사용자 이름 설정
+    password: MTVS_homefit!0822 # MySQL 데이터베이스 비밀번호 설정
+
+  # JPA 설정
+  jpa:
+    show-sql: true
+    database: mysql
+    hibernate:
+      ddl-auto: create
+    properties:
+      hibernate:
+        format_sql: true
+
+  # Security OAuth 설정
+  security:
+    oauth2:
+      client:
+        registration: # OAuth2 클라이언트 등록 정보 설정
+          kakao: # Kakao OAuth2 클라이언트 설정
+            client-id: ${CLIENT_ID}  # Kakao에서 발급받은 클라이언트 ID
+            client-secret: ${CLIENT_SECRET}  # Kakao에서 발급받은 클라이언트 시크릿
+            client-authentication-method: client_secret_post  # 클라이언트 인증 방식 설정 (POST 방식)
+            authorization-grant-type: authorization_code  # OAuth2 인증 방식 설정 (Authorization Code Grant)
+            redirect-uri: "{baseUrl}/{action}/oauth2/code/{registrationId}"  # OAuth2 인증 후 리디렉션될 URI 설정
+            scope: # Kakao OAuth2 인증 시 요청할 권한 범위
+              - profile_nickname
+              - profile_image
+            client-name: Kakao
+        provider: # OAuth2 공급자별 설정
+          kakao: # Kakao OAuth2 공급자 설정
+            authorization-uri: https://kauth.kakao.com/oauth/authorize  # Kakao OAuth2 인증 URI
+            token-uri: https://kauth.kakao.com/oauth/token  # Kakao OAuth2 토큰 발급 URI
+            user-info-uri: https://kapi.kakao.com/v2/user/me  # Kakao OAuth2 사용자 정보 URI
+            user-name-attribute: id  # Kakao OAuth2 사용자 정보 응답에서 사용자 이름 필드
+
+# MyBatis 설정
+mybatis:
+  mapper-locations: classpath:/mappers/**/*.xml # 매퍼 파일 경로 설정
+
+# CORS 설정
+cors:
+  allowed-origins: # 허용되는 Origin 목록 (프론트엔드 주소)
+    - http://localhost:8080 # SSR 방식(Spring)
+    - https://localhost:8080
+    - http://localhost:3000 # CSR 방식(React 등)
+    - https://localhost:3000
+  allowed-methods: # 허용되는 HTTP 메서드 목록
+    - GET
+    - POST
+    - PUT
+    - DELETE
+    - OPTIONS
+  allowed-headers: # 허용되는 HTTP 헤더 목록
+    - '*'
+  max-age: 3600  # preflight 요청 결과 캐싱 시간 (초)
+
+# JWT 설정
+jwt:
+  secret: ${JWT_SECRET}  # JWT Secret Key
+  expiration: 86400000 # 24시간
+
+# 애플리케이션 설정
+app:
+  auth:
+    token-secret: ${JWT_SECRET}
+    refresh-token-expiry: ${JWT_EXPIRATION_MS}
+    token-expiry: ${JWT_EXPIRATION_MS}
+  oauth2:
+    authorized-redirect-uris:
+      - https://localhost:8080/oauth/redirect
+      - https://localhost:8080/login/oauth2/code/kakao
+
+server:
+  servlet:
+    session:
+      cookie:
+        same-site: none # CSRF 공격 방지 + Same-Site + HTTP GET, <a>, <link> 허용.
+        secure: true # HTTPS 통신에 쿠키를 보낼 수 있음.
+      tracking-modes: cookie # URL에 JSESSIONID를 노출시키지 않음.
+  address: 0.0.0.0
+  port: 8081
+  ssl:
+    key-store: classpath:keystore.p12
+    key-store-password: ${KEY_PASSWORD}
+    key-store-type: PKCS12
+    key-alias: homefit
+
+# 로깅 설정
+logging:
+  level:
+    org.springframework.security: INFO  # TRACE는 너무 상세하므로 INFO로 줄임
+    org.springframework.security.oauth2: INFO  # 마찬가지로 INFO로 설정
+    org.springframework.web: DEBUG  # Spring 웹 관련 디버그 로그
+    com.homefit.backend: DEBUG  # 애플리케이션 로그를 더 많이 보고 싶다면 DEBUG로 설정
+    root: INFO  # 기본 로그 레벨을 INFO로 설정 (애플리케이션 전역 로그)
+    com.homefit.backend.service: DEBUG  # 서비스 레이어의 로그를 좀 더 상세하게 보기 위해 DEBUG로 설정
+

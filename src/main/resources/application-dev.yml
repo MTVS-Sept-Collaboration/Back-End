@@ -52,8 +52,8 @@ mybatis:
 # CORS 설정
 cors:
   allowed-origins: # 허용되는 Origin 목록 (프론트엔드 주소)
-    - http://localhost:8080 # SSR 방식(Spring)
-    - https://localhost:8080
+    - http://localhost:8081 # SSR 방식(Spring)
+    - https://localhost:8081
     - http://localhost:3000 # CSR 방식(React 등)
     - https://localhost:3000
   allowed-methods: # 허용되는 HTTP 메서드 목록
@@ -79,8 +79,8 @@ app:
     token-expiry: ${JWT_EXPIRATION_MS}
   oauth2:
     authorized-redirect-uris:
-      - https://localhost:8080/oauth/redirect
-      - https://localhost:8080/login/oauth2/code/kakao
+      - https://localhost:8081/oauth/redirect
+      - https://localhost:8081/login/oauth2/code/kakao
 
 server:
   servlet:

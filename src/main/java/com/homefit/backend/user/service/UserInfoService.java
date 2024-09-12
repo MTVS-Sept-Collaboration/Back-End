@@ -210,7 +210,6 @@ public class UserInfoService {
 
     private UserInfoDto convertToDto(UserInfo userInfo) {
         return UserInfoDto.builder()
-                .userId(userInfo.getUser().getId()) // User 엔티티에서 ID를 가져옴
                 .nickname(userInfo.getUser().getNickName())
                 .birthday(userInfo.getUser().getBirthday())
                 .height(userInfo.getHeight())

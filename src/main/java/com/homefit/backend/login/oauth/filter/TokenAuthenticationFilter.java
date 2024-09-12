@@ -1,26 +1,19 @@
 package com.homefit.backend.login.oauth.filter;
 
-import com.homefit.backend.login.common.CookieUtil;
-import com.homefit.backend.login.oauth.entity.user.UserPrincipal;
 import com.homefit.backend.login.oauth.token.AuthToken;
 import com.homefit.backend.login.oauth.token.AuthTokenProvider;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-
-import static com.homefit.backend.login.common.HeaderUtil.ACCESS_TOKEN;
 
 @Slf4j
 @RequiredArgsConstructor

@@ -37,6 +37,15 @@ public class CustomApiResponse<T> {
         return ResponseEntity.status(CREATED).body(new CustomApiResponse<>(CREATED.value(), SUCCESS_MESSAGE, data));
     }
 
+    public static <T> ResponseEntity<CustomApiResponse<T>> error(String message) {
+        return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new CustomApiResponse<>(INTERNAL_SERVER_ERROR.value(), message, null));
+    }
+
+    public static <T> ResponseEntity<CustomApiResponse<T>> error(HttpStatus status, String message) {
+        return ResponseEntity.status(status).body(new CustomApiResponse<>(status.value(), message, null));
+    }
+
+
     public static <T> ResponseEntity<CustomApiResponse<T>> fail(HttpStatus status, String message) {
         return ResponseEntity.status(status).body((new CustomApiResponse<>(status.value(), message, null)));
     }

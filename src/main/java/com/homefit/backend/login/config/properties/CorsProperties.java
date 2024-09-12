@@ -14,4 +14,5 @@ public class CorsProperties {
     private List<String> allowedMethods;
     private List<String> allowedHeaders;
     private Long maxAge;
+    private boolean allowCredentials;
 }

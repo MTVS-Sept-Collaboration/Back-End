@@ -43,6 +43,10 @@ public class User {
 
     private String refreshToken;
 
+    private String currentAccessToken;
+
+    private LocalDateTime lastLoginAt;
+
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     private UserInfo userInfo;
 
@@ -50,7 +54,8 @@ public class User {
     public User(Long id, String kakaoId, String nickName, LocalDate birthday,
                 String profileImage, RoleType role, LocalDateTime createdAt,
                 LocalDateTime updatedAt, LocalDate firedAt, Boolean userStatus,
-                String refreshToken) {
+                String refreshToken
+    ) {
         this.id = id;
         this.kakaoId = kakaoId;
         this.nickName = nickName;
@@ -72,5 +77,17 @@ public class User {
 
     public void updateRefreshToken(String refreshToken) {
         this.refreshToken = refreshToken;
+    }
+
+    public void updateLoginInfo(LocalDateTime loginTime, String newToken) {
+        this.lastLoginAt = loginTime;
+        this.currentAccessToken = newToken;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void deactivate() {
+        this.userStatus = false;
+        this.firedAt = LocalDate.now();
+        this.updatedAt = LocalDateTime.now();
     }
 }

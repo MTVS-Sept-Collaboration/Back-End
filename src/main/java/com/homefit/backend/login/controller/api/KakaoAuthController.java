@@ -1,17 +1,19 @@
 package com.homefit.backend.login.controller.api;
 
 import com.homefit.backend.login.common.CustomApiResponse;
-import com.homefit.backend.login.dto.KakaoLoginRequest;
 import com.homefit.backend.login.service.KakaoAuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -20,13 +22,11 @@ public class KakaoAuthController {
 
     private final KakaoAuthService kakaoAuthService;
 
-    @Operation(summary = "발급받은 액세스 토큰으로 로그인 및 회원가입을 시도")
+    @Operation(summary = "카카오 로그인 인증 URL 반환")
     @ApiResponse(responseCode = "200", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE))
-    @PostMapping("/kakao/login")
-    public ResponseEntity<CustomApiResponse<String>> kakaoLogin(
-            @RequestBody KakaoLoginRequest request
-    ) {
-        String jwtToken = kakaoAuthService.loginWithKakaoToken(request.getAccessToken());
-        return CustomApiResponse.success("token", jwtToken);
+    @GetMapping("/kakao/login")
+    public ResponseEntity<CustomApiResponse<String>> getKakaoLoginUrl(HttpServletRequest request) {
+        String kakaoLoginUrl = kakaoAuthService.getKakaoLoginUrl(request);
+        return CustomApiResponse.success("loginUrl", kakaoLoginUrl);
     }
 }

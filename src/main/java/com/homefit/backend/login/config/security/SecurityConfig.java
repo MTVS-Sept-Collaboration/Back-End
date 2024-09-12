@@ -1,6 +1,5 @@
 package com.homefit.backend.login.config.security;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.homefit.backend.login.config.properties.AppProperties;
 import com.homefit.backend.login.config.properties.CorsProperties;
 import com.homefit.backend.login.oauth.entity.RoleType;
@@ -23,7 +22,6 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.oauth2.client.*;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.client.RestTemplate;
@@ -66,36 +64,34 @@ public class SecurityConfig {
                         })
                 )
                 .authorizeHttpRequests(auth -> auth
-                        // Swagger 엔드포인트
-                        .requestMatchers("/v3/api-docs/**").permitAll()
-                        .requestMatchers("/swagger-ui/**").permitAll()
+                                // Swagger 엔드포인트
+                                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
 
-                        // 카카오 로그인 전용 엔드포인트
-                        .requestMatchers("/", "/login/**", "/oauth2/**", "/api/auth/**").permitAll()
-                        .requestMatchers("/oauth2/authorization/**", "/login/oauth2/code/**").permitAll()
+                                // 카카오 로그인 전용 엔드포인트
+                                .requestMatchers("/", "/login/**", "/oauth2/**", "/login/oauth2/code/*", "/api/auth/**").permitAll()
+                                .requestMatchers("/oauth2/authorization/**", "/login/oauth2/code/**").permitAll()
 
-                        // 관리자 전용 엔드포인트
-                        .requestMatchers("/api/admin/**").hasAuthority(RoleType.ADMIN.getCode())
+                                // 관리자 전용 엔드포인트
+                                .requestMatchers("/api/admin/**").hasAuthority(RoleType.ADMIN.getCode())
 
-                        // 사용자 정보 전용 엔드포인트
-//                        .requestMatchers("/api/user/**").permitAll()
-                        .requestMatchers("/api/user/**").authenticated()
+                                // 사용자 정보 전용 엔드포인트
+                                .requestMatchers("/api/user/**").authenticated()
 
-                        // 아이템카테고리 전용 엔드포인트
-                        .requestMatchers("/api/itemCategory/**").authenticated()
+                                // 아이템카테고리 전용 엔드포인트
+                                .requestMatchers("/api/itemCategory/**").authenticated()
 
-                        // 운동카테고리 전용 엔드포인트
-                        .requestMatchers("/api/ExerciseCategory/**").authenticated()
+                                // 운동카테고리 전용 엔드포인트
+                                .requestMatchers("/api/ExerciseCategory/**").authenticated()
 
-                        // 운동기록 전용 엔드포인트
-                        .requestMatchers("/api/exerciseLogs/**").authenticated()
+                                // 운동기록 전용 엔드포인트
+                                .requestMatchers("/api/exerciseLogs/**").authenticated()
 
-                        // 운동 전용 엔드포인트
-                        .requestMatchers("/api/exercises/**").authenticated()
+                                // 운동 전용 엔드포인트
+                                .requestMatchers("/api/exercises/**").authenticated()
 
-                        // 그 외 모든 요청은 인증 필요
-//                        .anyRequest().permitAll()
-                        .anyRequest().authenticated()
+                                // 그 외 모든 요청은 인증 필요
+                                .anyRequest().permitAll()
+//                        .anyRequest().authenticated()
                 )
                 .addFilterBefore(new TokenAuthenticationFilter(tokenProvider), UsernamePasswordAuthenticationFilter.class) // 토큰 인증 필터 추가
 //                .addFilterBefore(tokenAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class) // 토큰 인증 필터 추가
@@ -104,6 +100,7 @@ public class SecurityConfig {
                                 .baseUri("/oauth2/authorization") // OAuth2 로그인 시작 URI
                                 .authorizationRequestRepository(authorizationRequestRepository) // 쿠키 기반 인증 요청 저장소
                         )
+                        .defaultSuccessUrl("/oauth2/kakao/callback", true)
                         .redirectionEndpoint(redirection -> redirection
                                 .baseUri("/login/oauth2/code/*") // OAuth2 로그인 후 리디렉션 URI
                         )
@@ -165,13 +162,11 @@ public class SecurityConfig {
     public OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler(
             AuthTokenProvider tokenProvider,
             AppProperties appProperties,
-            ObjectMapper objectMapper,
-            OAuth2AuthorizationRequestBasedOnCookieRepository authorizationRequestRepository,
-            OAuth2AuthorizedClientService authorizedClientService
+            OAuth2AuthorizationRequestBasedOnCookieRepository authorizationRequestRepository
     ) {
         return new OAuth2AuthenticationSuccessHandler(
-                tokenProvider, appProperties, objectMapper,
-                authorizationRequestRepository, authorizedClientService
+                tokenProvider, appProperties,
+                authorizationRequestRepository
         );
     }
 

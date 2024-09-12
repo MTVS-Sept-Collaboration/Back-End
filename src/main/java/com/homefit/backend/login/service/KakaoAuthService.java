@@ -4,85 +4,160 @@ import com.homefit.backend.login.config.properties.AppProperties;
 import com.homefit.backend.login.dto.UserDto;
 import com.homefit.backend.login.entity.User;
 import com.homefit.backend.login.oauth.entity.RoleType;
-import com.homefit.backend.login.oauth.info.OAuth2UserInfo;
 import com.homefit.backend.login.oauth.info.impl.KakaoOAuth2UserInfo;
 import com.homefit.backend.login.oauth.repository.UserRepository;
-import com.homefit.backend.login.oauth.token.AuthToken;
 import com.homefit.backend.login.oauth.token.AuthTokenProvider;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.Map;
 
-import static org.springframework.http.HttpMethod.GET;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings(value = "unchecked")
 public class KakaoAuthService {
+    private static final Logger logger = LoggerFactory.getLogger(KakaoAuthService.class);
 
     private final UserRepository userRepository;
     private final AuthTokenProvider tokenProvider;
     private final RestTemplate restTemplate;
     private final AppProperties appProperties;
+    private final ServletContext servletContext;
 
     @Transactional
     public String loginWithKakaoToken(String kakaoAccessToken) {
+        KakaoOAuth2UserInfo userInfo = getKakaoUserInfo(kakaoAccessToken);
+        User user = processUserLogin(userInfo);
+        String jwtToken = createNewJwtToken(user);
+        user.updateLoginInfo(LocalDateTime.now(), jwtToken);
+        return jwtToken;
+    }
+
+    private KakaoOAuth2UserInfo getKakaoUserInfo(String accessToken) {
+        String userInfoEndpoint = "https://kapi.kakao.com/v2/user/me";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(accessToken);
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
         try {
-            // 1. 카카오 API를 호출하여 사용자 정보 가져오기
-            Map<String, Object> userInfoMap = getKakaoUserInfo(kakaoAccessToken);
-
-            // 2. Map을 KakaoOAuth2UserInfo 객체로 변환
-            OAuth2UserInfo userInfo = new KakaoOAuth2UserInfo(userInfoMap);
-
-            // 3. 사용자 정보로 회원가입 또는 로그인 처리
-            UserDto userDto = processUserRegistration(userInfo);
-
-            // 4. JWT 토큰 생성
-            Date now = new Date();
-            AuthToken authToken = tokenProvider.createAuthToken(
-                    userDto.getId().toString(),
-                    userDto.getRole().getCode(),
-                    new Date(now.getTime() + appProperties.getAuth().getTokenExpiry())
+            ResponseEntity<Map> response = restTemplate.exchange(
+                    userInfoEndpoint,
+                    HttpMethod.GET,
+                    entity,
+                    Map.class
             );
-
-            return authToken.getToken();
+            log.debug("Successfully retrieved user info from Kakao API");
+            return new KakaoOAuth2UserInfo(response.getBody());
         } catch (Exception e) {
-            log.error("Error in loginWithKakaoToken", e);
-            throw new RuntimeException("Failed to process Kakao login", e);
+            log.error("Error fetching user info from Kakao API", e);
+            throw new RuntimeException("Failed to get Kakao user info", e);
         }
     }
 
-    private Map<String, Object> getKakaoUserInfo(String accessToken) {
-        String userInfoEndpoint = "https://kapi.kakao.com/v2/user/me";
+    public String getKakaoAccessToken(String code) {
+        log.debug("Fetching Kakao access token with authorization code: {}", code);
+        String tokenUrl = "https://kauth.kakao.com/oauth/token";
 
-        org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
-        headers.setBearerAuth(accessToken);
-        org.springframework.http.HttpEntity<String> entity = new org.springframework.http.HttpEntity<>(headers);
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+        params.add("grant_type", "authorization_code");
+        params.add("client_id", appProperties.getKakao().getClientId());
+        params.add("client_secret", appProperties.getKakao().getClientSecret());
+        params.add("redirect_uri", appProperties.getKakao().getRedirectUri());
+        params.add("code", code);
 
-        org.springframework.http.ResponseEntity<Map> response = restTemplate.exchange(
-                userInfoEndpoint,
-                GET,
-                entity,
-                Map.class
-        );
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
-        return response.getBody();
+        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);
+
+        try {
+            ResponseEntity<Map> response = restTemplate.postForEntity(tokenUrl, request, Map.class);
+            log.info("Successfully retrieved Kakao access token");
+            return (String) response.getBody().get("access_token");
+        } catch (HttpClientErrorException e) {
+            log.error("Error fetching Kakao access token. Status code: {}, Response body: {}", e.getStatusCode(), e.getResponseBodyAsString());
+            throw new RuntimeException("Failed to get Kakao access token", e);
+        } catch (Exception e) {
+            log.error("Unexpected error fetching Kakao access token", e);
+            throw new RuntimeException("Failed to get Kakao access token", e);
+        }
     }
 
-    private UserDto processUserRegistration(OAuth2UserInfo userInfo) {
+    private String buildRedirectUri(HttpServletRequest request) {
+        String scheme = request.getScheme();
+        String serverName = request.getServerName();
+        int serverPort = request.getServerPort();
+        String contextPath = servletContext.getContextPath();
+
+        return UriComponentsBuilder.newInstance()
+                .scheme(scheme)
+                .host(serverName)
+                .port(serverPort)
+                .path(contextPath)
+                .path("/oauth2/kakao/callback")
+                .build()
+                .toUriString();
+    }
+
+    private String createNewJwtToken(User user) {
+        Date now = new Date();
+        long tokenValidityInMilliseconds = appProperties.getAuth().getTokenExpirationMsec();
+        Date validity = new Date(now.getTime() + tokenValidityInMilliseconds);
+
+        return tokenProvider.createAuthToken(
+                user.getId().toString(),
+                user.getRole().name(),
+                validity
+        ).getToken();
+    }
+
+    public String getKakaoLoginUrl(HttpServletRequest request) {
+        String baseUrl = "https://kauth.kakao.com/oauth/authorize";
+        String clientId = appProperties.getKakao().getClientId();
+        String redirectUri = buildRedirectUri(request);
+
+        log.info("Generating Kakao login URL with client ID: {} and redirect URI: {}", clientId, redirectUri);
+
+        String loginUrl = UriComponentsBuilder.fromHttpUrl(baseUrl)
+                .queryParam("client_id", clientId)
+                .queryParam("redirect_uri", redirectUri)
+                .queryParam("response_type", "code")
+                .build(true)  // URI 인코딩 적용
+                .toUriString();
+
+        log.info("Generated Kakao login URL: {}", loginUrl);
+
+        return loginUrl;
+    }
+
+    private User processUserLogin(KakaoOAuth2UserInfo userInfo) {
         return userRepository.findByKakaoId(userInfo.getId())
-                .map(existingUser -> updateExistingUser(existingUser, userInfo))
+                .map(existingUser -> {
+                    existingUser.updateProfile(userInfo.getName(), userInfo.getImageUrl());
+                    return userRepository.save(existingUser);  // Always save existing user
+                })
                 .orElseGet(() -> createNewUser(userInfo));
     }
 
-    private UserDto createNewUser(OAuth2UserInfo userInfo) {
-        UserDto newUserDto = UserDto.builder()
+    private User createNewUser(KakaoOAuth2UserInfo userInfo) {
+        User newUser = User.builder()
                 .kakaoId(userInfo.getId())
                 .nickName(userInfo.getName())
                 .profileImage(userInfo.getImageUrl())
@@ -91,27 +166,7 @@ public class KakaoAuthService {
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
-
-        User savedUser = userRepository.save(convertToEntity(newUserDto));
-        return convertToDto(savedUser);
-    }
-
-    private UserDto updateExistingUser(User existingUser, OAuth2UserInfo userInfo) {
-        UserDto updatedUserDto = UserDto.builder()
-                .id(existingUser.getId())
-                .kakaoId(existingUser.getKakaoId())
-                .nickName(userInfo.getName())
-                .profileImage(userInfo.getImageUrl())
-                .role(existingUser.getRole())
-                .userStatus(existingUser.getUserStatus())
-                .createdAt(existingUser.getCreatedAt())
-                .updatedAt(LocalDateTime.now())
-                .firedAt(existingUser.getFiredAt())
-                .refreshToken(existingUser.getRefreshToken())
-                .build();
-
-        User savedUser = userRepository.save(convertToEntity(updatedUserDto));
-        return convertToDto(savedUser);
+        return userRepository.save(newUser);
     }
 
     private User convertToEntity(UserDto userDto) {
@@ -125,7 +180,6 @@ public class KakaoAuthService {
                 .createdAt(userDto.getCreatedAt())
                 .updatedAt(userDto.getUpdatedAt())
                 .firedAt(userDto.getFiredAt())
-                .refreshToken(userDto.getRefreshToken())
                 .build();
     }
 
@@ -140,7 +194,6 @@ public class KakaoAuthService {
                 .updatedAt(user.getUpdatedAt())
                 .firedAt(user.getFiredAt())
                 .userStatus(user.getUserStatus())
-                .refreshToken(user.getRefreshToken())
                 .build();
     }
 }

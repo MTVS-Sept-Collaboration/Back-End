@@ -1,4 +1,4 @@
-package com.homefit.backend.login;
+package com.homefit.backend.login.service;
 
 import com.homefit.backend.login.config.properties.AppProperties;
 import com.homefit.backend.login.entity.User;
@@ -6,7 +6,6 @@ import com.homefit.backend.login.oauth.entity.RoleType;
 import com.homefit.backend.login.oauth.repository.UserRepository;
 import com.homefit.backend.login.oauth.token.AuthToken;
 import com.homefit.backend.login.oauth.token.AuthTokenProvider;
-import com.homefit.backend.login.service.KakaoAuthService;
 import org.junit.jupiter.api.*;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -23,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class LoginServiceTest {
 
     @InjectMocks
@@ -69,7 +69,7 @@ public class LoginServiceTest {
         when(userRepository.save(any(User.class))).thenAnswer(i -> {
             User savedUser = (User) i.getArguments()[0];
             return User.builder()
-                    .id(1L) // Set an ID for the new user
+                    .id(1L)
                     .kakaoId(savedUser.getKakaoId())
                     .nickName(savedUser.getNickName())
                     .profileImage(savedUser.getProfileImage())
@@ -109,7 +109,7 @@ public class LoginServiceTest {
                 .build();
 
         when(restTemplate.exchange(anyString(), any(), any(), eq(Map.class)))
-                .thenReturn(new org.springframework.http.ResponseEntity<>(userInfo, org.springframework.http.HttpStatus.OK));
+                .thenReturn(new ResponseEntity<>(userInfo, HttpStatus.OK));
         when(userRepository.findByKakaoId(anyString()))
                 .thenReturn(Optional.of(existingUser));
         when(userRepository.save(any(User.class)))
@@ -123,7 +123,8 @@ public class LoginServiceTest {
         // Assert
         assertNotNull(result);
         assertEquals("jwt_token", result);
-        verify(userRepository).save(any(User.class));
+        verify(userRepository, times(1)).findByKakaoId(anyString());
+        verify(userRepository, times(1)).save(any(User.class));
     }
 
     @DisplayName(value = "#03. 유효하지 않은 토큰 입력 시 예외 발생 테스트")

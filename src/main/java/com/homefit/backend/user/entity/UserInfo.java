@@ -13,7 +13,7 @@ public class UserInfo {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
+    private String nickname;
     private Double height;
     private Double weight;
     private Double bmi;
@@ -23,9 +23,10 @@ public class UserInfo {
     private User user;
 
     @Builder
-    public UserInfo(Long id, User user, Double height, Double weight) {
+    public UserInfo(Long id, User user, String nickname, Double height, Double weight) {
         this.id = id;
         this.user = user;
+        this.nickname = nickname;
         this.height = height;
         this.weight = weight;
         this.calculateAndSetBmi();

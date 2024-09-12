@@ -74,7 +74,6 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                 .createdAt(existingUser.getCreatedAt())
                 .updatedAt(LocalDateTime.now())
                 .firedAt(existingUser.getFiredAt())
-                .refreshToken(existingUser.getRefreshToken())
                 .build();
 
         return userRepository.save(updatedUser);

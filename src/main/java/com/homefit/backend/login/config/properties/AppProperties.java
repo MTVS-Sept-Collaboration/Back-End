@@ -45,10 +45,10 @@ public class AppProperties {
     @Getter
     @Setter
     public static class Kakao {
-        @Value("${spring.security.oauth2.client.registration.kakao.client-id}")
+        @Value("${app.kakao.client-id}")
         private String clientId;
 
-        @Value("${spring.security.oauth2.client.registration.kakao.client-secret}")
+        @Value("${app.kakao.client-secret}")
         private String clientSecret;
 
         @Value("${app.kakao.redirect-uri}")

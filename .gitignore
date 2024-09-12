@@ -44,3 +44,6 @@ mysql_data
 logs
 docker-compose.yml
 Dockerfile
+application.yml
+application-dev.yml
+application-prod.yml

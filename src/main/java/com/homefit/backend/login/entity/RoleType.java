@@ -1,4 +1,4 @@
-package com.homefit.backend.login.oauth.entity;
+package com.homefit.backend.login.entity;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

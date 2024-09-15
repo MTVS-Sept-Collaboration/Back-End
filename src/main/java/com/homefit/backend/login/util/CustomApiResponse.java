@@ -1,4 +1,4 @@
-package com.homefit.backend.login.common;
+package com.homefit.backend.login.util;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -44,7 +44,6 @@ public class CustomApiResponse<T> {
     public static <T> ResponseEntity<CustomApiResponse<T>> error(HttpStatus status, String message) {
         return ResponseEntity.status(status).body(new CustomApiResponse<>(status.value(), message, null));
     }
-
 
     public static <T> ResponseEntity<CustomApiResponse<T>> fail(HttpStatus status, String message) {
         return ResponseEntity.status(status).body((new CustomApiResponse<>(status.value(), message, null)));

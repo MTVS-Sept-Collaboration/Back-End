@@ -1,20 +1,12 @@
 package com.homefit.backend.login.config.security;
 
-import com.homefit.backend.login.config.properties.AppProperties;
 import com.homefit.backend.login.config.properties.CorsProperties;
-import com.homefit.backend.login.oauth.entity.RoleType;
-import com.homefit.backend.login.oauth.exception.RestAuthenticationEntryPoint;
-import com.homefit.backend.login.oauth.filter.TokenAuthenticationFilter;
-import com.homefit.backend.login.oauth.handler.OAuth2AuthenticationFailureHandler;
-import com.homefit.backend.login.oauth.handler.OAuth2AuthenticationSuccessHandler;
-import com.homefit.backend.login.oauth.repository.OAuth2AuthorizationRequestBasedOnCookieRepository;
-import com.homefit.backend.login.oauth.service.CustomOAuth2UserService;
-import com.homefit.backend.login.oauth.token.AuthTokenProvider;
-import jakarta.servlet.http.HttpServletResponse;
+import com.homefit.backend.login.entity.RoleType;
+import com.homefit.backend.login.config.filter.JwtAuthenticationFilter;
+import com.homefit.backend.login.service.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -22,9 +14,10 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -35,41 +28,24 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 public class SecurityConfig {
 
     private final CorsProperties corsProperties;
-    private final AuthTokenProvider tokenProvider;
-    private final CustomOAuth2UserService oAuth2UserService;
-    private final OAuth2AuthorizationRequestBasedOnCookieRepository authorizationRequestRepository;
-    private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final CustomUserDetailsService customUserDetailsService;
 
     @Bean
-    public SecurityFilterChain securityFilterChain(
-            HttpSecurity http,
-            OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler,
-            OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler
-    ) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .cors(Customizer.withDefaults())  // CORS 설정 적용
                 .csrf(AbstractHttpConfigurer::disable) // CSRF 비활성화 (RestAPI 이므로)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // 세션 사용 안 함
-                .formLogin(AbstractHttpConfigurer::disable)
-                .httpBasic(AbstractHttpConfigurer::disable)
-                .exceptionHandling(exceptions -> exceptions
-                        .authenticationEntryPoint(restAuthenticationEntryPoint)
-                        .accessDeniedHandler((request, response, accessDeniedException) -> {
-                            if (!response.isCommitted()) {
-                                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                                response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-                                response.setCharacterEncoding("UTF-8");
-                                response.getWriter().write("{\"error\": \"Access Denied\"}");
-                            }
-                        })
-                )
                 .authorizeHttpRequests(auth -> auth
                                 // Swagger 엔드포인트
                                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
 
-                                // 카카오 로그인 전용 엔드포인트
-                                .requestMatchers("/", "/login/**", "/oauth2/**", "/login/oauth2/code/*", "/api/auth/**").permitAll()
-                                .requestMatchers("/oauth2/authorization/**", "/login/oauth2/code/**").permitAll()
+                                // 로그인 및 회원가입 전용 엔드포인트
+                                .requestMatchers("/api/login/**", "/api/register/**").permitAll()
+
+                                // 비밀번호 변경 전용 엔드포인트
+                                .requestMatchers("/api/change-password").authenticated()
 
                                 // 관리자 전용 엔드포인트
                                 .requestMatchers("/api/admin/**").hasAuthority(RoleType.ADMIN.getCode())
@@ -90,33 +66,28 @@ public class SecurityConfig {
                                 .requestMatchers("/api/exercises/**").authenticated()
 
                                 // 그 외 모든 요청은 인증 필요
-                                .anyRequest().permitAll()
-//                        .anyRequest().authenticated()
+                                .anyRequest().authenticated()
+//                                .anyRequest().permitAll()
                 )
-                .addFilterBefore(new TokenAuthenticationFilter(tokenProvider), UsernamePasswordAuthenticationFilter.class) // 토큰 인증 필터 추가
-                .oauth2Login(oauth2 -> oauth2
-                        .authorizationEndpoint(authorization -> authorization
-                                .baseUri("/oauth2/authorization") // OAuth2 로그인 시작 URI
-                                .authorizationRequestRepository(authorizationRequestRepository) // 쿠키 기반 인증 요청 저장소
-                        )
-                        .defaultSuccessUrl("/oauth2/kakao/callback", true)
-                        .redirectionEndpoint(redirection -> redirection
-                                .baseUri("/login/oauth2/code/*") // OAuth2 로그인 후 리디렉션 URI
-                        )
-                        .userInfoEndpoint(userInfo -> userInfo
-                                .userService(oAuth2UserService) // OAuth2 사용자 정보 처리 서비스
-                        )
-                        .successHandler(oAuth2AuthenticationSuccessHandler) // OAuth2 로그인 성공 핸들러
-                        .failureHandler(oAuth2AuthenticationFailureHandler) // OAuth2 로그인 실패 핸들러
-                );
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)  // 토큰 인증 필터 추가
+                .userDetailsService(customUserDetailsService);
 
         return http.build();
     }
 
+    /*
+     * 비밀번호 암호화 설정
+     * */
     @Bean
-    public AuthenticationManager authenticationManager(
-            AuthenticationConfiguration authenticationConfiguration
-    ) throws Exception {
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    /*
+     * 인증 관련 설정
+     * */
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
 
@@ -136,44 +107,5 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;
-    }
-
-    /*
-     * 토큰 필터 설정
-     * */
-    @Bean
-    public TokenAuthenticationFilter tokenAuthenticationFilter() {
-        return new TokenAuthenticationFilter(tokenProvider);
-    }
-
-    /*
-     * Rest Template 지정
-     * */
-    @Bean
-    public RestTemplate restTemplate() {
-        return new RestTemplate();
-    }
-
-    /*
-     * OAuth2 인증 성공 핸들러 지정
-     * */
-    @Bean
-    public OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler(
-            AuthTokenProvider tokenProvider,
-            AppProperties appProperties,
-            OAuth2AuthorizationRequestBasedOnCookieRepository authorizationRequestRepository
-    ) {
-        return new OAuth2AuthenticationSuccessHandler(
-                tokenProvider, appProperties,
-                authorizationRequestRepository
-        );
-    }
-
-    /*
-     * OAuth2 인증 실패 핸들러 지정
-     * */
-    @Bean
-    public OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler() {
-        return new OAuth2AuthenticationFailureHandler(authorizationRequestRepository);
     }
 }

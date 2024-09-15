@@ -38,6 +38,8 @@ public class OpenApiConfig {
                 .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
                 // API 가 배포된 서버들을 정의함
                 .servers(List.of(
+                        new Server().url("https://192.168.43.180:8081").description("Local Server"), // 로컬 서버
+                        new Server().url("https://192.168.0.76:8081").description("Local Server"), // 로컬 서버
                         new Server().url("https://localhost:8080").description("Local Server"), // 로컬 서버
                         new Server().url("https://localhost:8081").description("Local Server"), // 로컬 서버
                         new Server().url("https://125.132.216.190:12500").description("Dev-01 Server"), // 개발 서버(맥)

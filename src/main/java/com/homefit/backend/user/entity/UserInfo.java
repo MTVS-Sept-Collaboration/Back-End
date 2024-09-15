@@ -4,6 +4,8 @@ import com.homefit.backend.login.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
+
 @Getter
 @Entity
 @Table(name = "user_info")
@@ -13,7 +15,9 @@ public class UserInfo {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private String nickname;
+
+    private String nickName;
+    private LocalDate birthday;
     private Double height;
     private Double weight;
     private Double bmi;
@@ -23,19 +27,32 @@ public class UserInfo {
     private User user;
 
     @Builder
-    public UserInfo(Long id, User user, String nickname, Double height, Double weight) {
+    public UserInfo(Long id, User user, String nickName, LocalDate birthday, Double height, Double weight) {
         this.id = id;
         this.user = user;
-        this.nickname = nickname;
+        this.nickName = nickName;
+        this.birthday = birthday;
         this.height = height;
         this.weight = weight;
         this.calculateAndSetBmi();
     }
 
-    public void updateInfo(Double height, Double weight) {
-        this.height = height;
-        this.weight = weight;
-        this.calculateAndSetBmi();
+    public void updateNickName(String nickName) {
+        this.nickName = nickName;
+    }
+
+    public void updateBirthday(LocalDate birthday) {
+        this.birthday = birthday;
+    }
+
+    public void updatePhysicalInfo(Double height, Double weight) {
+        if (height != null) {
+            this.height = height;
+        }
+        if (weight != null) {
+            this.weight = weight;
+        }
+        calculateAndSetBmi();
     }
 
     private void calculateAndSetBmi() {

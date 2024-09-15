@@ -1,6 +1,5 @@
 package com.homefit.backend.user.controller;
 
-import com.homefit.backend.login.common.CustomApiResponse;
 import com.homefit.backend.user.dto.UserInfoDto;
 import com.homefit.backend.user.dto.UserPhysicalInfoDto;
 import com.homefit.backend.user.service.UserInfoService;
@@ -35,21 +34,21 @@ public class UserInfoController {
     @ApiResponses(value = {
             @ApiResponse(
                     responseCode = "200", description = "닉네임 수정 성공",
-                    content = @Content(schema = @Schema(implementation = CustomApiResponse.class))
+                    content = @Content(schema = @Schema(implementation = UserInfoDto.class))
             ),
             @ApiResponse(responseCode = "401", description = "인증 실패"),
             @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음")
     })
     @PutMapping("/{id}/nickname")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<CustomApiResponse<Void>> updateNickname(
+    public ResponseEntity<String> updateNickName(
             @PathVariable(value = "id") Long userId,
-            @RequestBody String nickname
+            @RequestBody String nickName
     ) {
         // 쌍따옴표 제거
-        nickname = nickname.replaceAll("^\"|\"$", "");
-        userInfoService.updateNickname(userId, nickname);
-        return CustomApiResponse.success("닉네임이 성공적으로 업데이트 되었어요!", null);
+        nickName = nickName.replaceAll("^\"|\"$", "");
+        userInfoService.updateNickName(userId, nickName);
+        return ResponseEntity.ok("사용자의 닉네임이 성공적으로 변경되었어요!");
     }
 
     @Operation(summary = "사용자 생년월일 수정", description = "사용자의 생년월일을 수정합니다.")
@@ -57,19 +56,19 @@ public class UserInfoController {
             @ApiResponse(
                     responseCode = "200",
                     description = "생년월일 수정 성공",
-                    content = @Content(schema = @Schema(implementation = CustomApiResponse.class))
+                    content = @Content(schema = @Schema(implementation = UserInfoDto.class))
             ),
             @ApiResponse(responseCode = "401", description = "인증 실패"),
             @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음")
     })
     @PutMapping("/{id}/birthday")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<CustomApiResponse<Void>> updateBirthday(
+    public ResponseEntity<String> updateBirthday(
             @PathVariable(value = "id") Long userId,
             @RequestBody LocalDate birthday
     ) {
         userInfoService.updateBirthday(userId, birthday);
-        return CustomApiResponse.success("생년월일이 성공적으로 업데이트 되었어요!", null);
+        return ResponseEntity.ok("사용자의 생년월일이 성공적으로 변경되었어요!");
     }
 
     @Operation(summary = "사용자 신체 정보 수정", description = "사용자의 키와 몸무게 정보를 수정합니다.")
@@ -77,36 +76,36 @@ public class UserInfoController {
             @ApiResponse(
                     responseCode = "200",
                     description = "사용자 정보 수정 성공",
-                    content = @Content(schema = @Schema(implementation = CustomApiResponse.class))
+                    content = @Content(schema = @Schema(implementation = UserInfoDto.class))
             ),
             @ApiResponse(responseCode = "401", description = "인증 실패"),
             @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음")
     })
     @PutMapping("/{id}/body")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<CustomApiResponse<Void>> updateUserInfo(
+    public ResponseEntity<String> updateUserPhysicalInfo(
             @PathVariable(value = "id") Long userId,
             @RequestBody UserPhysicalInfoDto userPhysicalInfoDto
     ) {
         userInfoService.updateUserPhysicalInfo(userId, userPhysicalInfoDto);
-        return CustomApiResponse.success("사용자 정보와 BMI가 성공적으로 업데이트 되었어요!", null);
+        return ResponseEntity.ok("사용자의 신체 정보가 성공적으로 변경되었어요!");
     }
 
     @Operation(summary = "사용자 정보 일괄 수정", description = "사용자의 닉네임, 생년월일, 신체 정보를 일괄 수정합니다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "사용자 정보 수정 성공",
-                    content = @Content(schema = @Schema(implementation = CustomApiResponse.class))),
+                    content = @Content(schema = @Schema(implementation = UserInfoDto.class))),
             @ApiResponse(responseCode = "401", description = "인증 실패"),
             @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음")
     })
     @PutMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<CustomApiResponse<Void>> updateUserInfo(
+    public ResponseEntity<String> updateUserInfo(
             @PathVariable(value = "id") Long userId,
             @RequestBody UserInfoDto userInfoDto
     ) {
         userInfoService.updateUserInfo(userId, userInfoDto);
-        return CustomApiResponse.success("사용자 정보가 성공적으로 업데이트 되었어요!", null);
+        return ResponseEntity.ok("사용자의 모든 정보가 성공적으로 변경되었어요!");
     }
 
     @Operation(summary = "사용자 정보 조회", description = "사용자의 정보를 조회합니다.")
@@ -114,20 +113,20 @@ public class UserInfoController {
             @ApiResponse(
                     responseCode = "200",
                     description = "사용자 정보 조회 성공",
-                    content = @Content(schema = @Schema(implementation = CustomApiResponse.class))
+                    content = @Content(schema = @Schema(implementation = UserInfoDto.class))
             ),
             @ApiResponse(responseCode = "401", description = "인증 실패"),
             @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음")
     })
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<CustomApiResponse<UserInfoDto>> getUserInfo(
+    public ResponseEntity<UserInfoDto> getUserInfo(
             @PathVariable(value = "id") Long userId
     ) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         log.debug("Current authentication: {}", authentication);
 
         UserInfoDto userInfoDto = userInfoService.getUserInfo(userId);
-        return CustomApiResponse.success("사용자 정보가 정상적으로 조회되었어요!", userInfoDto);
+        return ResponseEntity.ok(userInfoDto);
     }
 }

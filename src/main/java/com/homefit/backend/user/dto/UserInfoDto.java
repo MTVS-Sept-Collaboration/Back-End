@@ -10,7 +10,7 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @Builder
 public class UserInfoDto {
-    private String nickname;
+    private String nickName;
     private LocalDate birthday;
     private Double height;
     private Double weight;

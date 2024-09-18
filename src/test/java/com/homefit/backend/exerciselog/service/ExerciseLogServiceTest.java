@@ -8,9 +8,9 @@ import com.homefit.backend.category.exercise.repository.ExerciseCategoryReposito
 import com.homefit.backend.exerciselog.dto.ExerciseLogRequest;
 import com.homefit.backend.exerciselog.dto.ExerciseLogResponse;
 import com.homefit.backend.exerciselog.repository.ExerciseLogRepository;
+import com.homefit.backend.login.entity.RoleType;
 import com.homefit.backend.login.entity.User;
-import com.homefit.backend.login.oauth.entity.RoleType;
-import com.homefit.backend.login.oauth.repository.UserRepository;
+import com.homefit.backend.login.repository.UserRepository;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -51,17 +51,9 @@ public class ExerciseLogServiceTest {
     public void setUp() {
         // User 객체 생성 및 저장
         user = userRepository.save(User.builder()
-                .id(null) // ID는 자동 생성
-                .kakaoId("kakao123")
-                .nickName("testUser")
-                .birthday(LocalDate.of(1990, 1, 1)) // 생년월일
-                .profileImage("https://example.com/profile.jpg")
+                .userName("testUser")
+                .password("password123")
                 .role(RoleType.USER) // 역할 설정
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
-                .firedAt(null) // 퇴사일 없음
-                .userStatus(true) // 활성화 상태
-                .refreshToken("refreshTokenExample")
                 .build());
 
         // ExerciseCategory 생성

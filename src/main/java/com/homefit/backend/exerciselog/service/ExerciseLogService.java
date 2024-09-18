@@ -9,7 +9,7 @@ import com.homefit.backend.exerciselog.repository.ExerciseLogRepository;
 import com.homefit.backend.global.exception.model.NotFoundException;
 import com.homefit.backend.global.exception.model.ValidationException;
 import com.homefit.backend.login.entity.User;
-import com.homefit.backend.login.oauth.repository.UserRepository;
+import com.homefit.backend.login.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

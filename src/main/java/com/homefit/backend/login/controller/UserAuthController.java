@@ -40,32 +40,35 @@ public class UserAuthController {
     })
     @PostMapping("/register")
     public ResponseEntity<String> registerUser(@RequestBody UserDto userDto) {
-        log.info("Registering new user with username: {} and role: {}", userDto.getUserName(), userDto.getRole());
+        log.info("회원가입 시도 사용자명: {} & 역할: {}", userDto.getUserName(), userDto.getRole());
         try {
             userService.registerUser(userDto);
-            log.info("User registered successfully: {}", userDto.getUserName());
+            log.info("사용자 회원가입 성공: {}", userDto.getUserName());
             return ResponseEntity.ok("회원가입에 성공했어요!");
         } catch (Exception e) {
-            log.error("Error registering user: {}", userDto.getUserName(), e);
+            log.error("사용자 회원가입 오류 발생: {}", userDto.getUserName(), e);
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
     @Operation(summary = "로그인", description = "사용자 또는 관리자 로그인을 위한 엔드포인트")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "로그인 성공"),
+            @ApiResponse(
+                    responseCode = "200", description = "로그인 성공",
+                    content = @Content(schema = @Schema(implementation = LoginResponseDto.class))
+            ),
             @ApiResponse(responseCode = "400", description = "잘못된 요청"),
             @ApiResponse(responseCode = "401", description = "인증 실패")
     })
     @PostMapping("/login")
     public ResponseEntity<LoginResponseDto> login(@RequestBody LoginRequestDto loginRequestDto) {
-        log.info("Attempting login for user: {}", loginRequestDto.getUserName());
+        log.info("로그인 시도: {}", loginRequestDto.getUserName());
         try {
             LoginResponseDto response = authenticationService.login(loginRequestDto);
-            log.info("Login successful for user: {}", loginRequestDto.getUserName());
+            log.info("로그인 성공: {}", loginRequestDto.getUserName());
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            log.error("Login failed for user: {}", loginRequestDto.getUserName(), e);
+            log.error("로그인 실패: {}", loginRequestDto.getUserName(), e);
             return ResponseEntity.badRequest().body(null);
         }
     }
@@ -80,13 +83,13 @@ public class UserAuthController {
     @PutMapping("/change-password")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<String> changePassword(@RequestBody PasswordChangeDto passwordChangeDto) {
-        log.info("Attempting to change password for user: {}", SecurityContextHolder.getContext().getAuthentication().getName());
+        log.info("비밀번호 변경 시도: {}", SecurityContextHolder.getContext().getAuthentication().getName());
         try {
             userService.changePassword(passwordChangeDto);
-            log.info("Password changed successfully for user: {}", SecurityContextHolder.getContext().getAuthentication().getName());
+            log.info("비밀번호 변경 성공: {}", SecurityContextHolder.getContext().getAuthentication().getName());
             return ResponseEntity.ok("비밀번호가 성공적으로 변경되었어요!");
         } catch (Exception e) {
-            log.error("Failed to change password for user: {}", SecurityContextHolder.getContext().getAuthentication().getName(), e);
+            log.error("비밀번호 변경 실패: {}", SecurityContextHolder.getContext().getAuthentication().getName(), e);
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }

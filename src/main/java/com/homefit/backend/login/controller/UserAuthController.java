@@ -1,6 +1,7 @@
 package com.homefit.backend.login.controller;
 
-import com.homefit.backend.login.dto.LoginDto;
+import com.homefit.backend.login.dto.LoginRequestDto;
+import com.homefit.backend.login.dto.LoginResponseDto;
 import com.homefit.backend.login.dto.PasswordChangeDto;
 import com.homefit.backend.login.dto.UserDto;
 import com.homefit.backend.login.service.AuthenticationService;
@@ -57,15 +58,15 @@ public class UserAuthController {
             @ApiResponse(responseCode = "401", description = "인증 실패")
     })
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody LoginDto loginDto) {
-        log.info("Attempting login for user: {}", loginDto.getUserName());
+    public ResponseEntity<LoginResponseDto> login(@RequestBody LoginRequestDto loginRequestDto) {
+        log.info("Attempting login for user: {}", loginRequestDto.getUserName());
         try {
-            String token = authenticationService.login(loginDto);
-            log.info("Login successful for user: {}", loginDto.getUserName());
-            return ResponseEntity.ok(token);
+            LoginResponseDto response = authenticationService.login(loginRequestDto);
+            log.info("Login successful for user: {}", loginRequestDto.getUserName());
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
-            log.error("Login failed for user: {}", loginDto.getUserName(), e);
-            return ResponseEntity.badRequest().body("아이디 혹은 비밀번호가 일치하지 않아요...");
+            log.error("Login failed for user: {}", loginRequestDto.getUserName(), e);
+            return ResponseEntity.badRequest().body(null);
         }
     }
 

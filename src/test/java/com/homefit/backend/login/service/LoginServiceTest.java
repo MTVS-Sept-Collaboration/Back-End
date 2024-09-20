@@ -2,7 +2,8 @@ package com.homefit.backend.login.service;
 
 import com.homefit.backend.login.config.provider.JwtTokenProvider;
 import com.homefit.backend.login.dto.AdminDto;
-import com.homefit.backend.login.dto.LoginDto;
+import com.homefit.backend.login.dto.LoginRequestDto;
+import com.homefit.backend.login.dto.LoginResponseDto;
 import com.homefit.backend.login.dto.UserDto;
 import com.homefit.backend.login.entity.RoleType;
 import com.homefit.backend.login.entity.User;
@@ -95,25 +96,26 @@ public class LoginServiceTest {
     @Order(2)
     void login_Success() {
         // Arrange
-        LoginDto loginDto = new LoginDto();
-        loginDto.setUserName("testUser");
-        loginDto.setPassword("password");
+        LoginRequestDto loginRequestDto = new LoginRequestDto();
+        loginRequestDto.setUserName("testUser");
+        loginRequestDto.setPassword("password");
 
         Authentication authentication = mock(Authentication.class);
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
                 .thenReturn(authentication);
 
-        User user = new User("testUser", "encodedPassword", RoleType.USER);
+        User user = new User(1L, "testUser", "encodedPassword", RoleType.USER);
         when(userRepository.findByUserName(anyString())).thenReturn(Optional.of(user));
 
         when(jwtTokenProvider.generateToken(any(User.class))).thenReturn("jwtToken");
 
         // Act
-        String result = authenticationService.login(loginDto);
+        LoginResponseDto result = authenticationService.login(loginRequestDto);
 
         // Assert
         assertNotNull(result);
-        assertEquals("jwtToken", result);
+        assertEquals(1L, result.getUserId());
+        assertEquals("jwtToken", result.getJwtToken());
         verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
         verify(userRepository).findByUserName(eq("testUser"));
         verify(jwtTokenProvider).generateToken(user);

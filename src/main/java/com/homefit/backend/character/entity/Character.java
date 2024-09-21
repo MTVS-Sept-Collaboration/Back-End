@@ -3,12 +3,14 @@ package com.homefit.backend.character.entity;
 import com.homefit.backend.character.dto.CharacterUpdateRequestDto;
 import com.homefit.backend.login.entity.User;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity
+@Table(name = "`character`") // MySQL에서 character는 예약어이므로
 @Getter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Builder
 public class Character {
 
     @Id
@@ -17,7 +19,7 @@ public class Character {
 
     @OneToOne
     @JoinColumn(name = "user_id")
-    private User userId;
+    private User user; // userId를 user로 변경
 
     private Long backpack;
     private Long body;

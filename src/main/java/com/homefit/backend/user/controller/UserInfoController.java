@@ -159,15 +159,4 @@ public class UserInfoController {
             return ResponseEntity.badRequest().body(null);
         }
     }
-//    @GetMapping("/{id}")
-//    @PreAuthorize("isAuthenticated()")
-//    public ResponseEntity<UserInfoDto> getUserInfo(
-//            @PathVariable(value = "id") Long userId
-//    ) {
-//        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-//        log.debug("Current authentication: {}", authentication);
-//
-//        UserInfoDto userInfoDto = userInfoService.getUserInfo(userId);
-//        return ResponseEntity.ok(userInfoDto);
-//    }
 }

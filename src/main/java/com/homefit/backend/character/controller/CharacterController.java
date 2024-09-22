@@ -3,25 +3,39 @@ package com.homefit.backend.character.controller;
 import com.homefit.backend.character.dto.CharacterUpdateRequestDto;
 import com.homefit.backend.character.service.CharacterService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 
+@Slf4j
 @Controller
 @RequestMapping("/api/character")
 @RequiredArgsConstructor
+@Tag(name = "사용자 캐릭터", description = "사용자 캐릭터 API")
+@SecurityRequirement(name = "bearerAuth")
 public class CharacterController {
 
     private final CharacterService characterService;
 
-    @Operation(summary = "유저 캐릭터 저장", description = "유저의 캐릭터 상태를 저장합니다. user의 ID를 기반으로 유저를 검색합니다.")
+    @Operation(summary = "유저 캐릭터 업데이트", description = "유저의 캐릭터 상태를 업데이트합니다.")
     @PutMapping("/{userId}")
     public ResponseEntity<?> updateCharacter(@PathVariable Long userId, @RequestBody CharacterUpdateRequestDto requestDto) {
-        characterService.updateCharacter(userId, requestDto);
-        return ResponseEntity.ok().build();
+        log.info("캐릭터 업데이트 요청: 사용자 ID = {}", userId);
+        Long updatedUserId = characterService.updateCharacter(userId, requestDto);
+        log.info("캐릭터 업데이트 완료: 사용자 ID = {}", updatedUserId);
+        return ResponseEntity.ok(updatedUserId);
+    }
+
+    @Operation(summary = "유저 캐릭터 조회", description = "유저의 캐릭터 상태를 조회합니다.")
+    @GetMapping("/{userId}")
+    public ResponseEntity<CharacterUpdateRequestDto> getCharacter(@PathVariable Long userId) {
+        log.info("캐릭터 조회 요청: 사용자 ID = {}", userId);
+        CharacterUpdateRequestDto character = characterService.getCharacter(userId);
+        log.info("캐릭터 조회 완료: 사용자 ID = {}", userId);
+        return ResponseEntity.ok(character);
     }
 }

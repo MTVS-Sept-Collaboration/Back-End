@@ -1,40 +1,45 @@
 package com.homefit.backend.log.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class LogManagementService {
 
     private static final String LOG_FILE_PATH = "logs/application.log";
     private final ObjectMapper objectMapper;
 
-    public LogManagementService(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
-    }
-
-    public List<String> getRecentLogs(int limit) throws IOException {
-        List<String> logs = Files.readAllLines(Paths.get(LOG_FILE_PATH));
-        int startIndex = Math.max(0, logs.size() - limit);
-        return logs.subList(startIndex, logs.size());
-    }
-
-    public String getLogsAsJson(int limit) throws IOException {
-        List<String> recentLogs = getRecentLogs(limit);
-        List<LogEntry> logEntries = recentLogs.stream()
+    public String getLogsAsJson(int page, int limit, String sortOrder, String logLevel) throws IOException {
+        List<LogEntry> allLogs = Files.readAllLines(Paths.get(LOG_FILE_PATH)).stream()
                 .map(this::parseLogEntry)
+                .filter(log -> logLevel == null || logLevel.isEmpty() || logLevel.equals(log.level))
                 .collect(Collectors.toList());
-        return objectMapper.writeValueAsString(logEntries);
+
+        if ("desc".equalsIgnoreCase(sortOrder)) {
+            Collections.reverse(allLogs);
+        }
+
+        int totalLogs = allLogs.size();
+        int totalPages = (int) Math.ceil((double) totalLogs / limit);
+        int startIndex = (page - 1) * limit;
+        int endIndex = Math.min(startIndex + limit, totalLogs);
+
+        List<LogEntry> paginatedLogs = allLogs.subList(startIndex, endIndex);
+
+        LogResponse response = new LogResponse(paginatedLogs, page, totalPages, totalLogs);
+        return objectMapper.writeValueAsString(response);
     }
 
     private LogEntry parseLogEntry(String logLine) {
-        // 간단한 파싱 로직. 실제 로그 형식에 맞게 조정 필요
         String[] parts = logLine.split(" ", 5);
         if (parts.length < 5) {
             return new LogEntry("Unknown", "Unknown", "Unknown", logLine);
@@ -53,6 +58,20 @@ public class LogManagementService {
             this.level = level;
             this.logger = logger;
             this.message = message;
+        }
+    }
+
+    private static class LogResponse {
+        public List<LogEntry> logs;
+        public int currentPage;
+        public int totalPages;
+        public int totalLogs;
+
+        public LogResponse(List<LogEntry> logs, int currentPage, int totalPages, int totalLogs) {
+            this.logs = logs;
+            this.currentPage = currentPage;
+            this.totalPages = totalPages;
+            this.totalLogs = totalLogs;
         }
     }
 }

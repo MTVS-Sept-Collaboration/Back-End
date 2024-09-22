@@ -35,10 +35,11 @@ public class CharacterService {
     public Character createCharacterForUser(User user) {
         log.info("사용자 ID {}의 새 캐릭터를 생성합니다.", user.getId());
         // 자동으로 생성되는 캐릭터의 기본 아이템을 'null'로 설정
+        // 추가로 'body'의 기본값만 1L로 변경
         Character newCharacter = Character.builder()
                 .user(user)
                 .backpack(null)
-                .body(null)
+                .body(1L)
                 .eyebrow(null)
                 .glasses(null)
                 .glove(null)

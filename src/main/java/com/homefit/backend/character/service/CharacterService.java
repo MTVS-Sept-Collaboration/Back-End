@@ -34,20 +34,20 @@ public class CharacterService {
 
     public Character createCharacterForUser(User user) {
         log.info("사용자 ID {}의 새 캐릭터를 생성합니다.", user.getId());
-        // 자동으로 생성되는 캐릭터의 기본 의상을 0으로 설정
+        // 자동으로 생성되는 캐릭터의 기본 아이템을 'null'로 설정
         Character newCharacter = Character.builder()
                 .user(user)
-                .backpack(0L)
-                .body(0L)
-                .eyebrow(0L)
-                .glasses(0L)
-                .glove(0L)
-                .hair(0L)
-                .hat(0L)
-                .mustache(0L)
-                .outerwear(0L)
-                .pants(0L)
-                .shoe(0L)
+                .backpack(null)
+                .body(null)
+                .eyebrow(null)
+                .glasses(null)
+                .glove(null)
+                .hair(null)
+                .hat(null)
+                .mustache(null)
+                .outerwear(null)
+                .pants(null)
+                .shoe(null)
                 .build();
         Character savedCharacter = characterRepository.save(newCharacter);
         log.info("사용자 ID {}의 새 캐릭터가 성공적으로 생성되었습니다.", user.getId());

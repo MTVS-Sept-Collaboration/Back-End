@@ -15,6 +15,7 @@ public class RankingKeyUtil {
 
     // 주간 key 생성 (예: user_ranking:weekly:2024-W38)
     public static String getWeeklyRankingKey() {
+        
         LocalDate today = LocalDate.now();
         WeekFields weekFields = WeekFields.of(Locale.getDefault());
         int weekOfYear = today.get(weekFields.weekOfWeekBasedYear());

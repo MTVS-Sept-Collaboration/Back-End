@@ -20,17 +20,17 @@ public class RankingController {
     }
 
     @GetMapping("/top")
-    public Set<Object> getTopUsers(@RequestParam int count) {
-        return rankingService.getTopUsers(count);
+    public Set<Object> getTopUsers(@RequestParam String period, @RequestParam int count) {
+        return rankingService.getTopUsers(period, count);
     }
 
     @GetMapping("/rank")
-    public Long getUserRank(@RequestParam Long userId) {
-        return rankingService.getUserRank(userId);
+    public Long getUserRank(@RequestParam String period, @RequestParam Long userId) {
+        return rankingService.getUserRank(period, userId);
     }
 
     @GetMapping("/score")
-    public Double getUserScore(@RequestParam Long userId) {
-        return rankingService.getUserScore(userId);
+    public Double getUserScore(@RequestParam String period, @RequestParam Long userId) {
+        return rankingService.getUserScore(period, userId);
     }
 }

@@ -41,6 +41,7 @@ out/
 src/main/resources/keystore.p12
 application.log
 mysql_data
+redis_data
 logs
 application.yml
 application-dev.yml

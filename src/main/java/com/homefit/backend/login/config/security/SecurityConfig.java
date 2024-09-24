@@ -22,6 +22,8 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.Collections;
+
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
@@ -48,7 +50,7 @@ public class SecurityConfig {
                                 .requestMatchers("/api/change-password").authenticated()
 
                                 // 관리자 전용 엔드포인트
-                                .requestMatchers("/api/admin/**").hasAuthority(RoleType.ADMIN.getCode())
+                                .requestMatchers("/api/admin/**", "/api/logs/**").hasAuthority(RoleType.ADMIN.getCode())
 
                                 // 사용자 정보 전용 엔드포인트
                                 .requestMatchers("/api/user/**").authenticated()
@@ -100,7 +102,11 @@ public class SecurityConfig {
 
         config.setAllowedOriginPatterns(corsProperties.getAllowedOrigins());
         config.setAllowedMethods(corsProperties.getAllowedMethods());
-        config.setAllowedHeaders(corsProperties.getAllowedHeaders());
+        if (corsProperties.getAllowedHeaders() != null) {
+            config.setAllowedHeaders(Collections.singletonList(corsProperties.getAllowedHeaders()));
+        } else {
+            config.setAllowedHeaders(Collections.singletonList("*")); // 모든 헤더 허용
+        }
         config.setAllowCredentials(true);
         config.setMaxAge(corsProperties.getMaxAge());
 

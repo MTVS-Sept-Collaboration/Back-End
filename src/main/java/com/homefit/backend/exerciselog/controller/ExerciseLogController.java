@@ -65,12 +65,14 @@ public class ExerciseLogController {
 
     @Operation(summary = "특정 운동 기록 조회", description = "특정 ID의 운동 기록을 조회합니다.")
     @GetMapping("/{id}")
-    public ResponseEntity<ExerciseLogResponse> getExerciseLogById(@PathVariable Long id) {
-        ExerciseLogResponse response = exerciseLogService.getExerciseLogById(id);
+    public ResponseEntity<ExerciseLogResponse> getExerciseLogById(
+            @PathVariable Long id,
+            @RequestParam Long userId) {
+        ExerciseLogResponse response = exerciseLogService.getExerciseLogById(id, userId);
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "전체 운동 기록 조회", description = "모든 운동 기록을 조회합니다.")
+    @Operation(summary = "관리자 전체 운동 기록 조회", description = "관리자가 모든 운동 기록을 조회합니다.")
     @GetMapping
     public ResponseEntity<List<ExerciseLogResponse>> getAllExerciseLogs() {
         List<ExerciseLogResponse> responses = exerciseLogService.getAllExerciseLogs();

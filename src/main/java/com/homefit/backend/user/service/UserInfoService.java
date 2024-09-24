@@ -28,14 +28,14 @@ public class UserInfoService {
     /** 사용자의 닉네임 정보만을 추가(수정)하기 위한 메서드 */
     @Transactional
     public void updateNickName(Long userId, String nickName) {
-        log.info("Starting updateNickname for user: {}", userId);
+        log.info("사용자 닉네임 수정 시작: 사용자 ID = {}", userId);
         try {
             UserInfo userInfo = getUserInfoById(userId);
             userInfo.updateNickName(nickName);
             userInfoRepository.save(userInfo);
-            log.info("Successfully updated nickName for user: {} - New value: {}", userId, nickName);
+            log.info("사용자 닉네임 수정 완료: 사용자 ID = {} - 변경된 닉네임: {}", userId, nickName);
         } catch (Exception e) {
-            log.error("Error occurred while updating nickName info for user: {}", userId, e);
+            log.error("사용자 닉네임 수정 중 오류 발생: 사용자 ID = {}", userId, e);
             throw e;
         }
     }
@@ -43,14 +43,14 @@ public class UserInfoService {
     /** 사용자의 생년월일 정보만을 추가(수정)하기 위한 메서드 */
     @Transactional
     public void updateBirthday(Long userId, LocalDate birthday) {
-        log.info("Starting updateBirthday for user: {}", userId);
+        log.info("사용자 생년월일 수정 시작: 사용자 ID = {}", userId);
         try {
             UserInfo userInfo = getUserInfoById(userId);
             userInfo.updateBirthday(birthday);
             userInfoRepository.save(userInfo);
-            log.info("Successfully updated birthday for user: {} - New value: {}", userId, birthday);
+            log.info("사용자 생년월일 수정 완료: 사용자 ID = {}, 변경된 생년월일 = {}\"", userId, birthday);
         } catch (Exception e) {
-            log.error("Error occurred while updating birthday info for user: {}", userId, e);
+            log.error("사용자 생년월일 수정 중 오류 발생: 사용자 ID = {}", userId, e);
             throw e;
         }
     }
@@ -58,14 +58,14 @@ public class UserInfoService {
     /** 사용자의 키와 몸무게 정보만을 수정하기 위한 메서드 */
     @Transactional
     public void updateUserPhysicalInfo(Long userId, UserPhysicalInfoDto userPhysicalInfoDto) {
-        log.info("Starting updateUserPhysicalInfo for user: {}", userId);
+        log.info("사용자 신체 정보 수정 시작: 사용자 ID = {}", userId);
         try {
             UserInfo userInfo = getUserInfoById(userId);
             userInfo.updatePhysicalInfo(userPhysicalInfoDto.getHeight(), userPhysicalInfoDto.getWeight());
             userInfoRepository.save(userInfo);
-            log.info("Successfully completed updateUserPhysicalInfo for user: {}", userId);
+            log.info("사용자 신체 정보 수정 완료: 사용자 ID = {}, 키 = {}, 몸무게 = {}", userId, userPhysicalInfoDto.getHeight(), userPhysicalInfoDto.getWeight());
         } catch (Exception e) {
-            log.error("Error occurred while updating physical info for user: {}", userId, e);
+            log.error("사용자 신체 정보 수정 중 오류 발생: 사용자 ID = {}", userId, e);
             throw e;
         }
     }
@@ -73,42 +73,50 @@ public class UserInfoService {
     /** 사용자의 모든 정보(닉네임, 생년월일, 키, 몸무게)를 수정하기 위한 메서드 */
     @Transactional
     public void updateUserInfo(Long userId, UserInfoDto userInfoDto) {
-        UserInfo userInfo = getUserInfoById(userId);
+        log.info("사용자 전체 정보 수정 시작: 사용자 ID = {}", userId);
+        try {
+            UserInfo userInfo = getUserInfoById(userId);
 
-        if (userInfoDto.getNickName() != null) {
-            userInfo.updateNickName(userInfoDto.getNickName());
+            if (userInfoDto.getNickName() != null) {
+                userInfo.updateNickName(userInfoDto.getNickName());
+            }
+            if (userInfoDto.getBirthday() != null) {
+                userInfo.updateBirthday(userInfoDto.getBirthday());
+            }
+            userInfo.updatePhysicalInfo(userInfoDto.getHeight(), userInfoDto.getWeight());
+            userInfoRepository.save(userInfo);
+            log.info("사용자 전체 정보 수정 완료: 사용자 ID = {}", userId);
+        } catch (Exception e) {
+            log.error("사용자 전체 정보 수정 중 오류 발생: 사용자 ID = {}", userId, e);
+            throw e;
         }
-        if (userInfoDto.getBirthday() != null) {
-            userInfo.updateBirthday(userInfoDto.getBirthday());
-        }
-        userInfo.updatePhysicalInfo(userInfoDto.getHeight(), userInfoDto.getWeight());
-
-        userInfoRepository.save(userInfo);
     }
 
     /** 사용자의 모든 정보(닉네임, 생년월일, 키, 몸무게)를 수정하기 위한 메서드 */
     @Transactional
     public UserInfoDto getUserInfo(Long userId) {
-        log.info("Starting getUserInfo for user: {}", userId);
+        log.info("사용자 정보 조회 시작: 사용자 ID = {}", userId);
         try {
             User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
+                    .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
 
             UserInfo userInfo = userInfoRepository.findByUser(user)
                     .orElseGet(() -> createDefaultUserInfo(user));
 
-            return convertToDto(userInfo);
+            UserInfoDto userInfoDto = convertToDto(userInfo);
+            log.info("사용자 정보 조회 완료: 사용자 ID = {}", userId);
+            return userInfoDto;
         } catch (Exception e) {
-            log.error("Error occurred while getting user info for user: {}", userId, e);
+            log.error("사용자 정보 조회 중 오류 발생: 사용자 ID = {}", userId, e);
             throw e;
         }
     }
 
     private UserInfo getUserInfoById(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
         return userInfoRepository.findByUser(user)
-                .orElseThrow(() -> new RuntimeException("UserInfo not found"));
+                .orElseThrow(() -> new RuntimeException("사용자 정보를 찾을 수 없습니다."));
     }
 
     private UserInfo createDefaultUserInfo(User user) {

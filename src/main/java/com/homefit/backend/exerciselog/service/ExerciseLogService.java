@@ -12,6 +12,7 @@ import com.homefit.backend.login.entity.User;
 import com.homefit.backend.login.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -58,14 +59,16 @@ public class ExerciseLogService {
 
         log.info("운동 기록 생성: 유저 확인 완료, userId={}", user.getId());
 
-        // 운동 리스트 확인
+        // 운동 리스트 확인 (운동 선호도 로그 추가)
         List<Exercise> exercises = exerciseRepository.findAllById(request.getExerciseIds());
         if (exercises.size() != request.getExerciseIds().size()) {
             log.error("운동 기록 생성 실패: 유효하지 않은 운동 ID가 포함되어 있습니다. 요청된 운동 IDs={}", request.getExerciseIds());
             throw new ValidationException("유효하지 않은 운동 ID가 포함되어 있습니다.");
         }
 
-        log.info("운동 기록 생성: 운동 리스트 확인 완료, exerciseIds={}", request.getExerciseIds());
+        for (Exercise exercise : exercises) {
+            log.info("유저 ID={}가 운동을 선택했습니다. 운동 ID={}, 운동명={}", user.getId(), exercise.getId(), exercise.getExerciseName());
+        }
 
         // 새로운 운동 기록 생성 및 저장
         ExerciseLog exerciseLog = new ExerciseLog(
@@ -77,6 +80,16 @@ public class ExerciseLogService {
         );
         exerciseLog.getExercises().addAll(exercises);
         ExerciseLog savedLog = exerciseLogRepository.save(exerciseLog);
+
+        // 운동 횟수와 카운트 로그 추가
+        for (Exercise exercise : exercises) {
+            int actualCount = request.getExerciseCount(); // 실제 클라이언트에서 제공된 카운트
+            log.info("유저 ID={}가 운동 기록을 생성했습니다. 운동명={}, 횟수={}", user.getId(), exercise.getExerciseName(), actualCount);
+        }
+
+        // 날짜별 운동 기록 로그 추가
+        log.info("유저 ID={}가 운동을 완료했습니다. 날짜={}, 운동명={}, 운동 횟수={}",
+                user.getId(), request.getDate(), exercises.get(0).getExerciseName(), request.getExerciseCount());
 
         log.info("운동 기록 생성 완료: ID={}, userId={}, exerciseCount={}, caloriesBurned={}", savedLog.getId(), user.getId(), savedLog.getExerciseCount(), savedLog.getCaloriesBurned());
         return mapToExerciseLogResponse(savedLog);
@@ -123,6 +136,16 @@ public class ExerciseLogService {
         existingLog.getExercises().addAll(exercises);
 
         ExerciseLog updatedLog = exerciseLogRepository.save(existingLog);
+
+        // 운동 횟수와 카운트 로그 추가
+        for (Exercise exercise : exercises) {
+            int actualCount = request.getExerciseCount(); // 실제 카운트
+            log.info("유저 ID={}가 운동 기록을 수정했습니다. 운동명={}, 수정된 횟수={}", userId, exercise.getExerciseName(), actualCount);
+        }
+
+        // 날짜별 운동 기록 로그 추가
+        log.info("유저 ID={}가 운동 기록을 수정 완료했습니다. 날짜={}, 운동명={}, 수정된 횟수={}",
+                userId, request.getDate(), exercises.get(0).getExerciseName(), request.getExerciseCount());
 
         log.info("운동 기록 수정 완료: ID={}, userId={}, updatedExerciseCount={}, updatedCaloriesBurned={}",
                 updatedLog.getId(), userId, updatedLog.getExerciseCount(), updatedLog.getCaloriesBurned());
@@ -186,18 +209,33 @@ public class ExerciseLogService {
 
 
     // 특정 운동 기록 조회
-    public ExerciseLogResponse getExerciseLogById(Long id) {
-        log.info("운동 기록 조회 요청: ID={}", id);
+    public ExerciseLogResponse getExerciseLogById(Long id, Long userId) {
+        log.info("운동 기록 조회 요청: ID={}, userId={}", id, userId);
 
+        // 운동 기록 확인
         ExerciseLog exerciseLog = exerciseLogRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("운동 기록을 찾을 수 없습니다. ID=" + id));
+
+        // 관리자이거나 해당 유저가 본인 기록을 조회할 때만 접근 허용
+        if (!exerciseLog.getUser().getId().equals(userId) && !isAdminUser(userId)) {
+            log.error("운동 기록 조회 권한 없음: userId={}, 기록 생성 유저 ID={}", userId, exerciseLog.getUser().getId());
+            throw new ValidationException("운동 기록 조회 권한이 없습니다.");
+        }
+
         return mapToExerciseLogResponse(exerciseLog);
     }
 
-    // 전체 운동 기록 조회
-    public List<ExerciseLogResponse> getAllExerciseLogs() {
-        log.info("전체 운동 기록 조회 요청");
+    // 관리자 권한 확인 메서드
+    private boolean isAdminUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("유저를 찾을 수 없습니다. ID=" + userId));
+        return user.getRole().equals("ADMIN"); // User 엔티티에 role 필드가 있다고 가정
+    }
 
+    // 관리자 전체 운동 기록 조회
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<ExerciseLogResponse> getAllExerciseLogs() {
+        log.info("관리자에 의한 전체 운동 기록 조회 요청");
         List<ExerciseLog> exerciseLogs = exerciseLogRepository.findAll();
         return exerciseLogs.stream()
                 .map(this::mapToExerciseLogResponse)

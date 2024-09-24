@@ -12,7 +12,7 @@ import java.util.List;
 public class CorsProperties {
     private List<String> allowedOrigins;
     private List<String> allowedMethods;
-    private List<String> allowedHeaders;
+    private String allowedHeaders;
     private Long maxAge;
     private boolean allowCredentials;
 }

@@ -2,6 +2,7 @@ package com.homefit.backend.exerciselog.controller;
 
 import com.homefit.backend.exerciselog.dto.ExerciseLogRequest;
 import com.homefit.backend.exerciselog.dto.ExerciseLogResponse;
+import com.homefit.backend.exerciselog.dto.TotalExerciseLogResponse;
 import com.homefit.backend.exerciselog.service.ExerciseLogService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -57,13 +58,13 @@ public class ExerciseLogController {
         return ResponseEntity.ok(responses);
     }
 
-    @Operation(summary = "특정 날짜의 유저 운동 로그 조회", description = "특정 유저의 특정 날짜에 대한 운동 기록을 합산하여 조회합니다.")
+    @Operation(summary = "특정 날짜의 유저 운동 로그 합산 조회", description = "특정 유저의 특정 날짜에 대한 운동 기록을 합산하여 조회합니다.")
     @GetMapping("/user/{userId}/date")
-    public ResponseEntity<ExerciseLogResponse> getExerciseLogsByUserAndDate(
+    public ResponseEntity<TotalExerciseLogResponse> getExerciseLogsByUserAndDate(
             @PathVariable Long userId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         // 서비스 메서드를 호출하여 해당 날짜의 운동 기록 합산 결과를 가져옴
-        ExerciseLogResponse response = exerciseLogService.getTotalExerciseLogsByUserAndDate(userId, date);
+        TotalExerciseLogResponse response = exerciseLogService.getTotalExerciseLogsByUserAndDate(userId, date);
         return ResponseEntity.ok(response);
     }
 
@@ -83,4 +84,3 @@ public class ExerciseLogController {
         return ResponseEntity.ok(responses);
     }
 }
-

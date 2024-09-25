@@ -7,6 +7,7 @@ import com.homefit.backend.category.exercise.entity.ExerciseCategory;
 import com.homefit.backend.category.exercise.repository.ExerciseCategoryRepository;
 import com.homefit.backend.exerciselog.dto.ExerciseLogRequest;
 import com.homefit.backend.exerciselog.dto.ExerciseLogResponse;
+import com.homefit.backend.exerciselog.dto.TotalExerciseLogResponse;
 import com.homefit.backend.exerciselog.repository.ExerciseLogRepository;
 import com.homefit.backend.login.entity.RoleType;
 import com.homefit.backend.login.entity.User;
@@ -200,13 +201,11 @@ public class ExerciseLogServiceTest {
         exerciseLogService.createExerciseLog(request2);
 
         // When
-        ExerciseLogResponse response = exerciseLogService.getTotalExerciseLogsByUserAndDate(user.getId(), date);
+        TotalExerciseLogResponse response = exerciseLogService.getTotalExerciseLogsByUserAndDate(user.getId(), date);
 
         // Then
         Assertions.assertNotNull(response);  // 응답이 null이 아닌지 확인
-        Assertions.assertEquals(400.0, response.getCaloriesBurned());  // 총 소모된 칼로리 확인 (250 + 150)
-        Assertions.assertEquals(3, response.getExerciseCount());  // 총 운동 횟수 확인 (1 + 2)
+        Assertions.assertEquals(400.0, response.getTotalCaloriesBurned());  // 총 소모된 칼로리 확인 (250 + 150)
+        Assertions.assertEquals(3, response.getTotalExerciseCount());  // 총 운동 횟수 확인 (1 + 2)
     }
-
 }
-

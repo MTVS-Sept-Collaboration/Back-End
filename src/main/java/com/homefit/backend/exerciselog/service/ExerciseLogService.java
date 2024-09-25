@@ -4,6 +4,7 @@ import com.homefit.backend.exercise.entity.Exercise;
 import com.homefit.backend.exercise.repository.ExerciseRepository;
 import com.homefit.backend.exerciselog.dto.ExerciseLogRequest;
 import com.homefit.backend.exerciselog.dto.ExerciseLogResponse;
+import com.homefit.backend.exerciselog.dto.TotalExerciseLogResponse;
 import com.homefit.backend.exerciselog.entity.ExerciseLog;
 import com.homefit.backend.exerciselog.repository.ExerciseLogRepository;
 import com.homefit.backend.global.exception.model.NotFoundException;
@@ -106,6 +107,10 @@ public class ExerciseLogService {
 
         ExerciseLog savedLog = exerciseLogRepository.save(exerciseLog);
 
+        // 운동 기록 생성 시 로그 기록
+        log.info("유저 ID={}가 운동을 완료했습니다. 운동명={}, 운동 횟수={}, 소모 칼로리={}",
+                user.getId(), exercise.getExerciseName(), request.getExerciseCount(), request.getCaloriesBurned());
+
         log.info("운동 기록 생성 완료: ID={}, userId={}, exerciseCount={}, caloriesBurned={}",
                 savedLog.getId(), user.getId(), savedLog.getExerciseCount(), savedLog.getCaloriesBurned());
 
@@ -143,6 +148,10 @@ public class ExerciseLogService {
         existingLog.setExercise(exercise);
 
         ExerciseLog updatedLog = exerciseLogRepository.save(existingLog);
+
+        // 운동 기록 수정 시 로그 기록
+        log.info("유저 ID={}가 운동 기록을 수정했습니다. 운동명={}, 수정된 횟수={}, 수정된 소모 칼로리={}",
+                userId, exercise.getExerciseName(), request.getExerciseCount(), request.getCaloriesBurned());
 
         log.info("운동 기록 수정 완료: ID={}, userId={}, updatedExerciseCount={}, updatedCaloriesBurned={}",
                 updatedLog.getId(), userId, updatedLog.getExerciseCount(), updatedLog.getCaloriesBurned());
@@ -182,13 +191,17 @@ public class ExerciseLogService {
 
         // 해당 유저의 운동 기록 조회
         List<ExerciseLog> exerciseLogs = exerciseLogRepository.findByUser(user);
+
+        // 유저별 운동 횟수 조회 로그 기록
+        log.info("유저 ID={}가 조회한 총 운동 횟수: {}", userId, exerciseLogs.stream().mapToInt(ExerciseLog::getExerciseCount).sum());
+
         return exerciseLogs.stream()
                 .map(this::mapToExerciseLogResponse)
                 .collect(Collectors.toList());
     }
 
     // 특정 날짜에 해당하는 유저의 운동 기록 조회
-    public ExerciseLogResponse getTotalExerciseLogsByUserAndDate(Long userId, LocalDate date) {
+    public TotalExerciseLogResponse getTotalExerciseLogsByUserAndDate(Long userId, LocalDate date) {
         log.info("특정 유저의 특정 날짜 운동 기록 조회 요청 (합산 결과): userId={}, date={}", userId, date);
 
         // 유저 확인
@@ -197,6 +210,12 @@ public class ExerciseLogService {
 
         // 특정 날짜의 유저의 운동 기록을 조회 (해당 날짜의 운동 로그)
         List<ExerciseLog> exerciseLogs = exerciseLogRepository.findByUserAndDateBetween(user, date, date);
+
+        // 각 운동 기록을 로그로 남기기
+        for (ExerciseLog exerciseLog : exerciseLogs) {
+            log.info("유저 ID={}가 {}일에 수행한 운동: 운동명={}, 횟수={}, 소모 칼로리={}",
+                    userId, date, exerciseLog.getExercise().getExerciseName(), exerciseLog.getExerciseCount(), exerciseLog.getCaloriesBurned());
+        }
 
         // 총 칼로리 소모와 총 운동 횟수를 계산
         double totalCalories = exerciseLogs.stream()
@@ -207,13 +226,14 @@ public class ExerciseLogService {
                 .mapToInt(ExerciseLog::getExerciseCount)
                 .sum(); // 모든 운동 횟수 합산
 
-        // ExerciseLogResponse로 변환 (총 합산된 칼로리와 운동 횟수)
-        return ExerciseLogResponse.builder()
-                .id(null)  // ID는 특정 운동 로그가 아닌 합산된 결과이므로 null로 설정
+        // 운동 로그 조회 로그 기록 (총합 결과)
+        log.info("유저 ID={}가 {}일에 수행한 총 운동 횟수: {}, 총 소모 칼로리: {}", userId, date, totalExerciseCount, totalCalories);
+
+        // 새로운 TotalExerciseLogResponse로 반환
+        return TotalExerciseLogResponse.builder()
                 .date(date)
-                .caloriesBurned(totalCalories)
-                .exerciseCount(totalExerciseCount)
-                .exerciseId(null)  // 운동 ID는 여러 개가 있으므로 단일 운동 ID는 null로 설정
+                .totalCaloriesBurned(totalCalories)
+                .totalExerciseCount(totalExerciseCount)
                 .build();
     }
 

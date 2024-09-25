@@ -30,6 +30,8 @@ public class ExerciseLogsController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         List<ExerciseLogsEntry> logEntries = exerciseLogsService.getLogEntries(date);
         Map<String, Integer> exercisePopularity = exerciseLogsService.collectExercisePopularity(logEntries);
+
+        // DTO로 변환하여 응답
         return ResponseEntity.ok(exercisePopularity);
     }
 
@@ -40,6 +42,8 @@ public class ExerciseLogsController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         List<ExerciseLogsEntry> logEntries = exerciseLogsService.getLogEntries(date);
         Map<Long, Integer> userExerciseCounts = exerciseLogsService.collectUserExerciseCounts(logEntries);
+
+        // DTO로 변환하여 응답
         return ResponseEntity.ok(userExerciseCounts);
     }
 
@@ -50,6 +54,7 @@ public class ExerciseLogsController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         List<ExerciseLogsEntry> logEntries = exerciseLogsService.getLogEntries(date);
         int totalExerciseCount = exerciseLogsService.collectTotalExerciseCount(logEntries);
+
         return ResponseEntity.ok(totalExerciseCount);
     }
 
@@ -60,6 +65,7 @@ public class ExerciseLogsController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         List<ExerciseLogsEntry> logEntries = exerciseLogsService.getLogEntries(date);
         Map<LocalDate, List<String>> exerciseByDate = exerciseLogsService.collectExerciseByDate(logEntries);
+
         return ResponseEntity.ok(exerciseByDate);
     }
 
@@ -70,6 +76,7 @@ public class ExerciseLogsController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         List<ExerciseLogsEntry> logEntries = exerciseLogsService.getLogEntries(date);
         Map<Long, Map<String, Integer>> exerciseCounts = exerciseLogsService.collectExerciseCounts(logEntries);
+
         return ResponseEntity.ok(exerciseCounts);
     }
 }

@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 @SpringBootTest
@@ -69,12 +70,13 @@ public class ExerciseLogServiceTest {
     public void testCreateExerciseLog() {
         // Given
         ExerciseLogRequest request = ExerciseLogRequest.builder()
-                .date(LocalDateTime.now())
+                .date(LocalDate.now())  // LocalDate로 변경
                 .caloriesBurned(300.5)
                 .exerciseCount(2)
-                .exerciseTime(Duration.ofMinutes(30))
+                .startTime(LocalTime.of(10, 15, 30))  // 시작 시간 설정
+                .endTime(LocalTime.of(11, 45, 30))    // 끝 시간 설정
                 .userId(user.getId())
-                .exerciseIds(List.of(exercise1.getId(), exercise2.getId()))
+                .exerciseId(exercise1.getId())  // 단일 exerciseId로 변경
                 .build();
 
         // When
@@ -83,8 +85,8 @@ public class ExerciseLogServiceTest {
         // Then
         Assertions.assertNotNull(response);
         Assertions.assertEquals(2, response.getExerciseCount());
-        Assertions.assertEquals(2, response.getExerciseNames().size());
         Assertions.assertEquals(300.5, response.getCaloriesBurned());
+        Assertions.assertEquals(exercise1.getId(), response.getExerciseId());  // 운동 ID 체크
     }
 
     @Test
@@ -92,22 +94,24 @@ public class ExerciseLogServiceTest {
     public void testUpdateExerciseLog() {
         // Given
         ExerciseLogRequest createRequest = ExerciseLogRequest.builder()
-                .date(LocalDateTime.now())
+                .date(LocalDate.now())
                 .caloriesBurned(200.0)
                 .exerciseCount(1)
-                .exerciseTime(Duration.ofMinutes(20))
+                .startTime(LocalTime.of(9, 30))
+                .endTime(LocalTime.of(10, 30))
                 .userId(user.getId())
-                .exerciseIds(List.of(exercise1.getId()))
+                .exerciseId(exercise1.getId())
                 .build();
         ExerciseLogResponse createdLog = exerciseLogService.createExerciseLog(createRequest);
 
         ExerciseLogRequest updateRequest = ExerciseLogRequest.builder()
-                .date(LocalDateTime.now())
+                .date(LocalDate.now())
                 .caloriesBurned(350.0)
                 .exerciseCount(2)
-                .exerciseTime(Duration.ofMinutes(40))
+                .startTime(LocalTime.of(9, 0))
+                .endTime(LocalTime.of(10, 0))
                 .userId(user.getId())
-                .exerciseIds(List.of(exercise1.getId(), exercise2.getId()))
+                .exerciseId(exercise2.getId())  // 운동을 exercise2로 변경
                 .build();
 
         // When
@@ -117,6 +121,7 @@ public class ExerciseLogServiceTest {
         Assertions.assertNotNull(updatedLog);
         Assertions.assertEquals(2, updatedLog.getExerciseCount());
         Assertions.assertEquals(350.0, updatedLog.getCaloriesBurned());
+        Assertions.assertEquals(exercise2.getId(), updatedLog.getExerciseId());  // 운동 ID 체크
     }
 
     @Test
@@ -124,12 +129,13 @@ public class ExerciseLogServiceTest {
     public void testDeleteExerciseLog() {
         // Given
         ExerciseLogRequest request = ExerciseLogRequest.builder()
-                .date(LocalDateTime.now())
+                .date(LocalDate.now())
                 .caloriesBurned(250.0)
                 .exerciseCount(1)
-                .exerciseTime(Duration.ofMinutes(25))
+                .startTime(LocalTime.of(8, 30))
+                .endTime(LocalTime.of(9, 30))
                 .userId(user.getId())
-                .exerciseIds(List.of(exercise1.getId()))
+                .exerciseId(exercise1.getId())
                 .build();
         ExerciseLogResponse createdLog = exerciseLogService.createExerciseLog(request);
 
@@ -145,12 +151,13 @@ public class ExerciseLogServiceTest {
     public void testGetExerciseLogsByUser() {
         // Given
         ExerciseLogRequest request = ExerciseLogRequest.builder()
-                .date(LocalDateTime.now())
+                .date(LocalDate.now())
                 .caloriesBurned(200.0)
                 .exerciseCount(1)
-                .exerciseTime(Duration.ofMinutes(20))
+                .startTime(LocalTime.of(7, 30))
+                .endTime(LocalTime.of(8, 30))
                 .userId(user.getId())
-                .exerciseIds(List.of(exercise1.getId()))
+                .exerciseId(exercise1.getId())
                 .build();
         exerciseLogService.createExerciseLog(request);
 
@@ -163,30 +170,43 @@ public class ExerciseLogServiceTest {
     }
 
     @Test
-    @DisplayName("특정 날짜의 유저 운동 로그 조회 테스트")
+    @DisplayName("특정 날짜의 유저 운동 로그 조회 테스트 (합산된 결과)")
     public void testGetExerciseLogsByUserAndDate() {
         // Given
         LocalDate date = LocalDate.now();  // 오늘 날짜로 설정
 
-        ExerciseLogRequest request = ExerciseLogRequest.builder()
-                .date(LocalDateTime.now())  // 운동 로그는 여전히 LocalDateTime을 사용할 수 있음
+        // 첫 번째 운동 기록 생성
+        ExerciseLogRequest request1 = ExerciseLogRequest.builder()
+                .date(date)
                 .caloriesBurned(250.0)
                 .exerciseCount(1)
-                .exerciseTime(Duration.ofMinutes(25))
+                .startTime(LocalTime.of(6, 30))
+                .endTime(LocalTime.of(7, 30))
                 .userId(user.getId())
-                .exerciseIds(List.of(exercise1.getId()))
+                .exerciseId(exercise1.getId())
                 .build();
-        exerciseLogService.createExerciseLog(request);
+        exerciseLogService.createExerciseLog(request1);
+
+        // 두 번째 운동 기록 생성
+        ExerciseLogRequest request2 = ExerciseLogRequest.builder()
+                .date(date)
+                .caloriesBurned(150.0)
+                .exerciseCount(2)
+                .startTime(LocalTime.of(8, 0))
+                .endTime(LocalTime.of(8, 45))
+                .userId(user.getId())
+                .exerciseId(exercise2.getId())
+                .build();
+        exerciseLogService.createExerciseLog(request2);
 
         // When
-        List<ExerciseLogResponse> logs = exerciseLogService.getExerciseLogsByUserAndDate(user.getId(), date);
+        ExerciseLogResponse response = exerciseLogService.getTotalExerciseLogsByUserAndDate(user.getId(), date);
 
         // Then
-        Assertions.assertNotNull(logs);
-        Assertions.assertFalse(logs.isEmpty());
-        Assertions.assertEquals(1, logs.size());
+        Assertions.assertNotNull(response);  // 응답이 null이 아닌지 확인
+        Assertions.assertEquals(400.0, response.getCaloriesBurned());  // 총 소모된 칼로리 확인 (250 + 150)
+        Assertions.assertEquals(3, response.getExerciseCount());  // 총 운동 횟수 확인 (1 + 2)
     }
 
-
-
 }
+

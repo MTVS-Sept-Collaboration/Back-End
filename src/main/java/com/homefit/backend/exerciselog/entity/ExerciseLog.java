@@ -8,42 +8,46 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
-@Getter
+import java.time.LocalDate;
+import java.time.LocalTime;
+
+
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Getter
 public class ExerciseLog extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private LocalDateTime date;
+    private LocalDate date;
     private Double caloriesBurned;
     private Integer exerciseCount;
-    private Duration exerciseTime;
+    private LocalTime startTime;
+    private LocalTime endTime;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "exercise_log_id") // Exercise 테이블에 외래 키를 생성
-    private List<Exercise> exercises = new ArrayList<>();
+    @OneToOne
+    @JoinColumn(name = "exercise_id")  // 운동과 1:1 관계 설정
+    private Exercise exercise;
 
-    public ExerciseLog(LocalDateTime date, Double caloriesBurned, Integer exerciseCount, Duration exerciseTime, User user) {
+    public ExerciseLog(LocalDate date, Double caloriesBurned, Integer exerciseCount, LocalTime startTime, LocalTime endTime, User user, Exercise exercise) {
         this.date = date;
         this.caloriesBurned = caloriesBurned;
         this.exerciseCount = exerciseCount;
-        this.exerciseTime = exerciseTime;
+        this.startTime = startTime;
+        this.endTime = endTime;
         this.user = user;
+        this.exercise = exercise;
     }
 
-    public void updateExerciseLog(LocalDateTime date, Double caloriesBurned, Integer exerciseCount, Duration exerciseTime) {
+    // 기존 update 메서드 수정
+    public void updateExerciseLog(LocalDate date, Double caloriesBurned, Integer exerciseCount, LocalTime startTime, LocalTime endTime) {
         if (date != null) {
             this.date = date;
         }
@@ -53,8 +57,16 @@ public class ExerciseLog extends BaseEntity {
         if (exerciseCount != null && exerciseCount > 0) {
             this.exerciseCount = exerciseCount;
         }
-        if (exerciseTime != null && !exerciseTime.isNegative()) {
-            this.exerciseTime = exerciseTime;
+        if (startTime != null) {
+            this.startTime = startTime;
         }
+        if (endTime != null) {
+            this.endTime = endTime;
+        }
+    }
+
+    // setExercise 메서드 추가
+    public void setExercise(Exercise exercise) {
+        this.exercise = exercise;
     }
 }

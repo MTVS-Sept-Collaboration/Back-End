@@ -35,7 +35,10 @@ public class ExerciseLogController {
 
     @Operation(summary = "운동 기록 수정", description = "기존의 운동 기록을 수정합니다.")
     @PutMapping("/{id}")
-    public ResponseEntity<ExerciseLogResponse> updateExerciseLog(@PathVariable Long id, @RequestParam Long userId, @RequestBody ExerciseLogRequest request) {
+    public ResponseEntity<ExerciseLogResponse> updateExerciseLog(
+            @PathVariable Long id,
+            @RequestParam Long userId,
+            @RequestBody ExerciseLogRequest request) {
         ExerciseLogResponse response = exerciseLogService.updateExerciseLog(id, userId, request);
         return ResponseEntity.ok(response);
     }
@@ -54,13 +57,14 @@ public class ExerciseLogController {
         return ResponseEntity.ok(responses);
     }
 
-    @Operation(summary = "특정 유저의 특정 날짜 운동 기록 조회", description = "특정 유저의 특정 날짜 운동 기록을 조회합니다.")
+    @Operation(summary = "특정 날짜의 유저 운동 로그 조회", description = "특정 유저의 특정 날짜에 대한 운동 기록을 합산하여 조회합니다.")
     @GetMapping("/user/{userId}/date")
-    public ResponseEntity<List<ExerciseLogResponse>> getExerciseLogsByUserAndDate(
+    public ResponseEntity<ExerciseLogResponse> getExerciseLogsByUserAndDate(
             @PathVariable Long userId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        List<ExerciseLogResponse> responses = exerciseLogService.getExerciseLogsByUserAndDate(userId, date);
-        return ResponseEntity.ok(responses);
+        // 서비스 메서드를 호출하여 해당 날짜의 운동 기록 합산 결과를 가져옴
+        ExerciseLogResponse response = exerciseLogService.getTotalExerciseLogsByUserAndDate(userId, date);
+        return ResponseEntity.ok(response);
     }
 
     @Operation(summary = "특정 운동 기록 조회", description = "특정 ID의 운동 기록을 조회합니다.")
@@ -79,3 +83,4 @@ public class ExerciseLogController {
         return ResponseEntity.ok(responses);
     }
 }
+

@@ -38,114 +38,111 @@ public class ExerciseLogService {
     }
 
     public boolean existsByExercise(Exercise exercise) {
-        return exerciseLogRepository.existsByExercisesContaining(exercise);
+        return exerciseLogRepository.existsByExercise(exercise);
+    }
+
+    // 운동 기록 조회
+    public ExerciseLogResponse getExerciseLogById(Long id, Long userId) {
+        log.info("운동 기록 조회 요청: ID={}, userId={}", id, userId);
+
+        // 운동 기록 확인
+        ExerciseLog exerciseLog = exerciseLogRepository.findById(id)
+                .orElseThrow(() -> {
+                    log.error("운동 기록을 찾을 수 없습니다. ID={}", id);
+                    return new NotFoundException("운동 기록을 찾을 수 없습니다. ID=" + id);
+                });
+
+        // 유저 확인 (기록 생성 유저와 요청 유저가 같은지 확인)
+        if (!exerciseLog.getUser().getId().equals(userId)) {
+            log.error("운동 기록 조회 권한 없음: userId={}, 기록 생성 유저 ID={}", userId, exerciseLog.getUser().getId());
+            throw new ValidationException("운동 기록 조회 권한이 없습니다.");
+        }
+
+        return mapToExerciseLogResponse(exerciseLog);
+    }
+
+    // 관리자 전체 운동 기록 조회
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<ExerciseLogResponse> getAllExerciseLogs() {
+        log.info("관리자에 의한 전체 운동 기록 조회 요청");
+
+        List<ExerciseLog> exerciseLogs = exerciseLogRepository.findAll();
+        if (exerciseLogs.isEmpty()) {
+            log.warn("운동 기록이 존재하지 않습니다.");
+        }
+
+        return exerciseLogs.stream()
+                .map(this::mapToExerciseLogResponse)
+                .collect(Collectors.toList());
     }
 
     // 운동 기록 생성
     @Transactional
     public ExerciseLogResponse createExerciseLog(ExerciseLogRequest request) {
-        log.info("운동 기록 생성 요청: userId={}, date={}, caloriesBurned={}, exerciseCount={}, exerciseTime={}",
-                request.getUserId(), request.getDate(), request.getCaloriesBurned(), request.getExerciseCount(), request.getExerciseTime());
+        log.info("운동 기록 생성 요청: userId={}, date={}, caloriesBurned={}, exerciseCount={}, startTime={}, endTime={}",
+                request.getUserId(), request.getDate(), request.getCaloriesBurned(), request.getExerciseCount(), request.getStartTime(), request.getEndTime());
 
-        // 입력값 유효성 검사
+        // 유효성 검사
         validateExerciseLogRequest(request);
 
         // 유저 확인
         User user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> {
-                    log.error("운동 기록 생성 실패: 유저를 찾을 수 없습니다. userId={}", request.getUserId());
-                    return new NotFoundException("유저를 찾을 수 없습니다. ID=" + request.getUserId());
-                });
+                .orElseThrow(() -> new NotFoundException("유저를 찾을 수 없습니다. ID=" + request.getUserId()));
 
-        log.info("운동 기록 생성: 유저 확인 완료, userId={}", user.getId());
+        // 운동 확인
+        Exercise exercise = exerciseRepository.findById(request.getExerciseId())
+                .orElseThrow(() -> new NotFoundException("운동을 찾을 수 없습니다. ID=" + request.getExerciseId()));
 
-        // 운동 리스트 확인 (운동 선호도 로그 추가)
-        List<Exercise> exercises = exerciseRepository.findAllById(request.getExerciseIds());
-        if (exercises.size() != request.getExerciseIds().size()) {
-            log.error("운동 기록 생성 실패: 유효하지 않은 운동 ID가 포함되어 있습니다. 요청된 운동 IDs={}", request.getExerciseIds());
-            throw new ValidationException("유효하지 않은 운동 ID가 포함되어 있습니다.");
-        }
-
-        for (Exercise exercise : exercises) {
-            log.info("유저 ID={}가 운동을 선택했습니다. 운동 ID={}, 운동명={}", user.getId(), exercise.getId(), exercise.getExerciseName());
-        }
-
-        // 새로운 운동 기록 생성 및 저장
+        // 운동 기록 생성 및 저장
         ExerciseLog exerciseLog = new ExerciseLog(
                 request.getDate(),
                 request.getCaloriesBurned(),
                 request.getExerciseCount(),
-                request.getExerciseTime(),
-                user
+                request.getStartTime(),
+                request.getEndTime(),
+                user,
+                exercise
         );
-        exerciseLog.getExercises().addAll(exercises);
+
         ExerciseLog savedLog = exerciseLogRepository.save(exerciseLog);
 
-        // 운동 횟수와 카운트 로그 추가
-        for (Exercise exercise : exercises) {
-            int actualCount = request.getExerciseCount(); // 실제 클라이언트에서 제공된 카운트
-            log.info("유저 ID={}가 운동 기록을 생성했습니다. 운동명={}, 횟수={}", user.getId(), exercise.getExerciseName(), actualCount);
-        }
+        log.info("운동 기록 생성 완료: ID={}, userId={}, exerciseCount={}, caloriesBurned={}",
+                savedLog.getId(), user.getId(), savedLog.getExerciseCount(), savedLog.getCaloriesBurned());
 
-        // 날짜별 운동 기록 로그 추가
-        log.info("유저 ID={}가 운동을 완료했습니다. 날짜={}, 운동명={}, 운동 횟수={}",
-                user.getId(), request.getDate(), exercises.get(0).getExerciseName(), request.getExerciseCount());
-
-        log.info("운동 기록 생성 완료: ID={}, userId={}, exerciseCount={}, caloriesBurned={}", savedLog.getId(), user.getId(), savedLog.getExerciseCount(), savedLog.getCaloriesBurned());
         return mapToExerciseLogResponse(savedLog);
     }
 
-    // 운동 기록 수정 (생성한 유저만 수정 가능)
+    // 운동 기록 수정
     @Transactional
     public ExerciseLogResponse updateExerciseLog(Long id, Long userId, ExerciseLogRequest request) {
-        log.info("운동 기록 수정 요청: ID={}, userId={}, date={}, caloriesBurned={}, exerciseCount={}",
-                id, userId, request.getDate(), request.getCaloriesBurned(), request.getExerciseCount());
+        log.info("운동 기록 수정 요청: ID={}, userId={}, date={}, caloriesBurned={}, exerciseCount={}, startTime={}, endTime={}",
+                id, userId, request.getDate(), request.getCaloriesBurned(), request.getExerciseCount(), request.getStartTime(), request.getEndTime());
 
         // 운동 기록 확인
         ExerciseLog existingLog = exerciseLogRepository.findById(id)
-                .orElseThrow(() -> {
-                    log.error("운동 기록 수정 실패: 운동 기록을 찾을 수 없습니다. ID={}", id);
-                    return new NotFoundException("운동 기록을 찾을 수 없습니다. ID=" + id);
-                });
+                .orElseThrow(() -> new NotFoundException("운동 기록을 찾을 수 없습니다. ID=" + id));
 
-        // 유저 확인
+        // 권한 확인
         if (!existingLog.getUser().getId().equals(userId)) {
-            log.error("운동 기록 수정 권한 없음: userId={}, 기록 생성 유저 ID={}", userId, existingLog.getUser().getId());
             throw new ValidationException("운동 기록 수정 권한이 없습니다.");
         }
 
-        log.info("운동 기록 수정: 유저 확인 완료, userId={}", userId);
-
-        // 운동 리스트 확인
-        List<Exercise> exercises = exerciseRepository.findAllById(request.getExerciseIds());
-        if (exercises.size() != request.getExerciseIds().size()) {
-            log.error("운동 기록 수정 실패: 유효하지 않은 운동 ID가 포함되어 있습니다. 요청된 운동 IDs={}", request.getExerciseIds());
-            throw new ValidationException("유효하지 않은 운동 ID가 포함되어 있습니다.");
-        }
-
-        log.info("운동 기록 수정: 운동 리스트 확인 완료, exerciseIds={}", request.getExerciseIds());
+        // 운동 확인
+        Exercise exercise = exerciseRepository.findById(request.getExerciseId())
+                .orElseThrow(() -> new NotFoundException("운동을 찾을 수 없습니다. ID=" + request.getExerciseId()));
 
         // 운동 기록 업데이트
         existingLog.updateExerciseLog(
                 request.getDate(),
                 request.getCaloriesBurned(),
                 request.getExerciseCount(),
-                request.getExerciseTime()
+                request.getStartTime(),
+                request.getEndTime()
         );
-        existingLog.getExercises().clear();
-        existingLog.getExercises().addAll(exercises);
+
+        existingLog.setExercise(exercise);
 
         ExerciseLog updatedLog = exerciseLogRepository.save(existingLog);
-
-        // 운동 횟수와 카운트 로그 추가
-        for (Exercise exercise : exercises) {
-            int actualCount = request.getExerciseCount(); // 실제 카운트
-            log.info("유저 ID={}가 운동 기록을 수정했습니다. 운동명={}, 수정된 횟수={}", userId, exercise.getExerciseName(), actualCount);
-        }
-
-        // 날짜별 운동 기록 로그 추가
-        log.info("유저 ID={}가 운동 기록을 수정 완료했습니다. 날짜={}, 운동명={}, 수정된 횟수={}",
-                userId, request.getDate(), exercises.get(0).getExerciseName(), request.getExerciseCount());
 
         log.info("운동 기록 수정 완료: ID={}, userId={}, updatedExerciseCount={}, updatedCaloriesBurned={}",
                 updatedLog.getId(), userId, updatedLog.getExerciseCount(), updatedLog.getCaloriesBurned());
@@ -153,14 +150,17 @@ public class ExerciseLogService {
         return mapToExerciseLogResponse(updatedLog);
     }
 
-    // 운동 기록 삭제 (생성한 유저만 삭제 가능)
+    // 운동 기록 삭제
     @Transactional
     public void deleteExerciseLog(Long id, Long userId) {
         log.info("운동 기록 삭제 요청: ID={}, 유저 ID={}", id, userId);
 
         // 운동 기록 확인
         ExerciseLog exerciseLog = exerciseLogRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("운동 기록을 찾을 수 없습니다."));
+                .orElseThrow(() -> {
+                    log.error("운동 기록을 찾을 수 없습니다. ID={}", id);
+                    return new NotFoundException("운동 기록을 찾을 수 없습니다.");
+                });
 
         // 유저 확인 (기록 생성 유저와 요청 유저가 같은지 확인)
         if (!exerciseLog.getUser().getId().equals(userId)) {
@@ -172,7 +172,7 @@ public class ExerciseLogService {
         log.info("운동 기록 삭제 완료: ID={}", id);
     }
 
-    // 특정 유저의 운동 기록만 조회
+    // 특정 유저의 운동 기록 조회
     public List<ExerciseLogResponse> getExerciseLogsByUser(Long userId) {
         log.info("유저 ID={}의 운동 기록 조회 요청", userId);
 
@@ -188,103 +188,63 @@ public class ExerciseLogService {
     }
 
     // 특정 날짜에 해당하는 유저의 운동 기록 조회
-    public List<ExerciseLogResponse> getExerciseLogsByUserAndDate(Long userId, LocalDate date) {
-        log.info("특정 유저의 특정 날짜 운동 기록 조회 요청: userId={}, date={}", userId, date);
+    public ExerciseLogResponse getTotalExerciseLogsByUserAndDate(Long userId, LocalDate date) {
+        log.info("특정 유저의 특정 날짜 운동 기록 조회 요청 (합산 결과): userId={}, date={}", userId, date);
 
         // 유저 확인
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("유저를 찾을 수 없습니다. ID=" + userId));
 
-        // 특정 날짜의 운동 기록 조회 (해당 날짜의 00:00 ~ 23:59:59 범위)
-        LocalDateTime startOfDay = date.atStartOfDay();
-        LocalDateTime endOfDay = date.atTime(LocalTime.MAX);
+        // 특정 날짜의 유저의 운동 기록을 조회 (해당 날짜의 운동 로그)
+        List<ExerciseLog> exerciseLogs = exerciseLogRepository.findByUserAndDateBetween(user, date, date);
 
-        // 해당 유저의 특정 날짜 운동 기록 조회
-        List<ExerciseLog> exerciseLogs = exerciseLogRepository.findByUserAndDateBetween(user, startOfDay, endOfDay);
+        // 총 칼로리 소모와 총 운동 횟수를 계산
+        double totalCalories = exerciseLogs.stream()
+                .mapToDouble(ExerciseLog::getCaloriesBurned)
+                .sum(); // 모든 칼로리 소모 합산
 
-        return exerciseLogs.stream()
-                .map(this::mapToExerciseLogResponse)
-                .collect(Collectors.toList());
+        int totalExerciseCount = exerciseLogs.stream()
+                .mapToInt(ExerciseLog::getExerciseCount)
+                .sum(); // 모든 운동 횟수 합산
+
+        // ExerciseLogResponse로 변환 (총 합산된 칼로리와 운동 횟수)
+        return ExerciseLogResponse.builder()
+                .id(null)  // ID는 특정 운동 로그가 아닌 합산된 결과이므로 null로 설정
+                .date(date)
+                .caloriesBurned(totalCalories)
+                .exerciseCount(totalExerciseCount)
+                .exerciseId(null)  // 운동 ID는 여러 개가 있으므로 단일 운동 ID는 null로 설정
+                .build();
     }
 
-
-    // 특정 운동 기록 조회
-    public ExerciseLogResponse getExerciseLogById(Long id, Long userId) {
-        log.info("운동 기록 조회 요청: ID={}, userId={}", id, userId);
-
-        // 운동 기록 확인
-        ExerciseLog exerciseLog = exerciseLogRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("운동 기록을 찾을 수 없습니다. ID=" + id));
-
-        // 관리자이거나 해당 유저가 본인 기록을 조회할 때만 접근 허용
-        if (!exerciseLog.getUser().getId().equals(userId) && !isAdminUser(userId)) {
-            log.error("운동 기록 조회 권한 없음: userId={}, 기록 생성 유저 ID={}", userId, exerciseLog.getUser().getId());
-            throw new ValidationException("운동 기록 조회 권한이 없습니다.");
-        }
-
-        return mapToExerciseLogResponse(exerciseLog);
-    }
-
-    // 관리자 권한 확인 메서드
-    private boolean isAdminUser(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("유저를 찾을 수 없습니다. ID=" + userId));
-        return user.getRole().equals("ADMIN"); // User 엔티티에 role 필드가 있다고 가정
-    }
-
-    // 관리자 전체 운동 기록 조회
-    @PreAuthorize("hasRole('ADMIN')")
-    public List<ExerciseLogResponse> getAllExerciseLogs() {
-        log.info("관리자에 의한 전체 운동 기록 조회 요청");
-        List<ExerciseLog> exerciseLogs = exerciseLogRepository.findAll();
-        return exerciseLogs.stream()
-                .map(this::mapToExerciseLogResponse)
-                .collect(Collectors.toList());
-    }
 
     // ExerciseLog 엔티티를 ExerciseLogResponse로 변환
     private ExerciseLogResponse mapToExerciseLogResponse(ExerciseLog exerciseLog) {
-        List<String> exerciseNames = exerciseLog.getExercises().stream()
-                .map(Exercise::getExerciseName)
-                .collect(Collectors.toList());
-
         return ExerciseLogResponse.builder()
                 .id(exerciseLog.getId())
                 .date(exerciseLog.getDate())
                 .caloriesBurned(exerciseLog.getCaloriesBurned())
                 .exerciseCount(exerciseLog.getExerciseCount())
-                .exerciseTime(exerciseLog.getExerciseTime())
-                .exerciseNames(exerciseNames)
-                .createdAt(exerciseLog.getCreatedAt())
-                .updatedAt(exerciseLog.getUpdatedAt())
+                .exerciseId(exerciseLog.getExercise().getId())
                 .build();
     }
 
-    // 운동 기록 요청 데이터 유효성 검사
+    // 유효성 검사
     private void validateExerciseLogRequest(ExerciseLogRequest request) {
         if (request.getCaloriesBurned() != null && request.getCaloriesBurned() <= 0) {
-            log.error("유효성 검사 실패: 소모된 칼로리가 0 이하입니다. 입력값={}", request.getCaloriesBurned());
             throw new ValidationException("소모된 칼로리는 0보다 커야 합니다.");
         }
 
         if (request.getExerciseCount() != null && request.getExerciseCount() <= 0) {
-            log.error("유효성 검사 실패: 운동 횟수가 0 이하입니다. 입력값={}", request.getExerciseCount());
             throw new ValidationException("운동 횟수는 0보다 커야 합니다.");
         }
 
-        if (request.getExerciseTime() != null && request.getExerciseTime().isNegative()) {
-            log.error("유효성 검사 실패: 운동 시간이 음수입니다. 입력값={}", request.getExerciseTime());
-            throw new ValidationException("운동 시간은 음수가 될 수 없습니다.");
-        }
-
         if (request.getUserId() == null) {
-            log.error("유효성 검사 실패: 유저 ID가 제공되지 않았습니다.");
             throw new ValidationException("유저 ID는 필수 입력 사항입니다.");
         }
 
-        if (request.getExerciseIds() == null || request.getExerciseIds().isEmpty()) {
-            log.error("유효성 검사 실패: 운동 ID 리스트가 비어 있습니다.");
-            throw new ValidationException("운동 ID 리스트는 비어 있을 수 없습니다.");
+        if (request.getExerciseId() == null) {
+            throw new ValidationException("운동 ID는 필수 입력 사항입니다.");
         }
     }
 

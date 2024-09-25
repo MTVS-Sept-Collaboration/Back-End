@@ -67,6 +67,9 @@ public class SecurityConfig {
                                 // 운동 전용 엔드포인트
                                 .requestMatchers("/api/exercises/**").authenticated()
 
+                                // actuator 및 프로메테우스 관련 엔드 포인트
+                                .requestMatchers("/actuator/**").permitAll()
+
                                 // 그 외 모든 요청은 인증 필요
                                 .anyRequest().authenticated()
 //                                .anyRequest().permitAll()

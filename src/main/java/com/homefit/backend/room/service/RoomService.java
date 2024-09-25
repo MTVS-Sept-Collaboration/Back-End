@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.NoSuchElementException;
 
 @Service
 @RequiredArgsConstructor
@@ -23,19 +24,20 @@ public class RoomService {
         Room room = new Room();
         // 방 아이디 넣을 거면 넣어야 함
         // 유저 엔티티에 방 생성 횟수 들어가야 할듯
-        return roomRepository.save(room).getId();
+        return roomRepository.save(room).getRoomId();
     }
 
     public void deleteRoom(Long roomId) {
-        Room foundRoom = roomRepository.findById(roomId)
-                .orElseThrow();
+        Room foundRoom = roomRepository.findByRoomId(roomId)
+                .orElseThrow(() -> new NoSuchElementException("Room not found with id: " + roomId));
 
         LocalDateTime createdTime = foundRoom.getCreatedAt();
-
         roomRepository.delete(foundRoom);
-        LocalDateTime deleteTime = LocalDateTime.now();
 
+        LocalDateTime deleteTime = LocalDateTime.now();
         Duration existsTime = Duration.between(createdTime, deleteTime);
         log.info("Delete Room Exists Time : {}", existsTime);
     }
+
+
 }

@@ -21,10 +21,10 @@ public class RoomController {
         return ResponseEntity.ok(roomService.createRoom(requestDto));
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{roomId}")
     @Operation(summary = "운동 룸 삭제", description = "운동 룸을 삭제합니다. 포톤에서 방이 사라지면 호출합니다.")
-    public ResponseEntity<?> deleteRoom(@PathVariable Long id) {
-        roomService.deleteRoom(id);
+    public ResponseEntity<?> deleteRoom(@PathVariable Long roomId) {
+        roomService.deleteRoom(roomId);
         return ResponseEntity.noContent().build();
     }
 }

@@ -7,6 +7,7 @@ import com.homefit.backend.exerciselog.dto.ExerciseLogResponse;
 import com.homefit.backend.exerciselog.dto.TotalExerciseLogResponse;
 import com.homefit.backend.exerciselog.entity.ExerciseLog;
 import com.homefit.backend.exerciselog.repository.ExerciseLogRepository;
+import com.homefit.backend.exerciselog.util.TimeUtils;
 import com.homefit.backend.global.exception.model.NotFoundException;
 import com.homefit.backend.global.exception.model.ValidationException;
 import com.homefit.backend.login.entity.User;
@@ -94,13 +95,17 @@ public class ExerciseLogService {
         Exercise exercise = exerciseRepository.findById(request.getExerciseId())
                 .orElseThrow(() -> new NotFoundException("운동을 찾을 수 없습니다. ID=" + request.getExerciseId()));
 
+        // 수동 변환 로직 추가
+        LocalTime startTime = TimeUtils.convertStringToLocalTime(request.getStartTime());
+        LocalTime endTime = TimeUtils.convertStringToLocalTime(request.getEndTime());
+
         // 운동 기록 생성 및 저장
         ExerciseLog exerciseLog = new ExerciseLog(
                 request.getDate(),
                 request.getCaloriesBurned(),
                 request.getExerciseCount(),
-                request.getStartTime(),
-                request.getEndTime(),
+                startTime,  // 변환된 LocalTime 사용
+                endTime,    // 변환된 LocalTime 사용
                 user,
                 exercise
         );
@@ -136,13 +141,17 @@ public class ExerciseLogService {
         Exercise exercise = exerciseRepository.findById(request.getExerciseId())
                 .orElseThrow(() -> new NotFoundException("운동을 찾을 수 없습니다. ID=" + request.getExerciseId()));
 
+        // 수동 변환 로직 추가
+        LocalTime startTime = TimeUtils.convertStringToLocalTime(request.getStartTime());
+        LocalTime endTime = TimeUtils.convertStringToLocalTime(request.getEndTime());
+
         // 운동 기록 업데이트
         existingLog.updateExerciseLog(
                 request.getDate(),
                 request.getCaloriesBurned(),
                 request.getExerciseCount(),
-                request.getStartTime(),
-                request.getEndTime()
+                startTime,  // 변환된 LocalTime 사용
+                endTime    // 변환된 LocalTime 사용
         );
 
         existingLog.setExercise(exercise);

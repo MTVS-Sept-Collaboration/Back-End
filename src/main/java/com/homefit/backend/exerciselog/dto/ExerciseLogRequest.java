@@ -24,11 +24,11 @@ public class ExerciseLogRequest {
     @Schema(description = "운동 횟수", example = "10")
     private Integer exerciseCount;
 
-    @Schema(description = "운동 시작 시간", example = "10:15:30")
-    private LocalTime startTime;
+    @Schema(description = "운동 시작 시간", example = "101530")
+    private String startTime;
 
-    @Schema(description = "운동 끝 시간", example = "11:45:30")
-    private LocalTime endTime;
+    @Schema(description = "운동 끝 시간", example = "114530")
+    private String endTime;
 
     @Schema(description = "유저 ID", example = "1")
     private Long userId;

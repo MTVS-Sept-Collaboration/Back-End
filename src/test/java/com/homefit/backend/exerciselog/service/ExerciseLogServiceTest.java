@@ -55,7 +55,7 @@ public class ExerciseLogServiceTest {
         user = userRepository.save(User.builder()
                 .userName("testUser")
                 .password("password123")
-                .role(RoleType.USER) // 역할 설정
+                .role(RoleType.USER)
                 .build());
 
         // ExerciseCategory 생성
@@ -74,8 +74,8 @@ public class ExerciseLogServiceTest {
                 .date(LocalDate.now())  // LocalDate로 변경
                 .caloriesBurned(300.5)
                 .exerciseCount(2)
-                .startTime(LocalTime.of(10, 15, 30))  // 시작 시간 설정
-                .endTime(LocalTime.of(11, 45, 30))    // 끝 시간 설정
+                .startTime("10:15:30")  // String으로 변경
+                .endTime("11:45:30")    // String으로 변경
                 .userId(user.getId())
                 .exerciseId(exercise1.getId())  // 단일 exerciseId로 변경
                 .build();
@@ -98,8 +98,8 @@ public class ExerciseLogServiceTest {
                 .date(LocalDate.now())
                 .caloriesBurned(200.0)
                 .exerciseCount(1)
-                .startTime(LocalTime.of(9, 30))
-                .endTime(LocalTime.of(10, 30))
+                .startTime("09:30:00")  // String으로 변경
+                .endTime("10:30:00")    // String으로 변경
                 .userId(user.getId())
                 .exerciseId(exercise1.getId())
                 .build();
@@ -109,8 +109,8 @@ public class ExerciseLogServiceTest {
                 .date(LocalDate.now())
                 .caloriesBurned(350.0)
                 .exerciseCount(2)
-                .startTime(LocalTime.of(9, 0))
-                .endTime(LocalTime.of(10, 0))
+                .startTime("09:00:00")  // String으로 변경
+                .endTime("10:00:00")    // String으로 변경
                 .userId(user.getId())
                 .exerciseId(exercise2.getId())  // 운동을 exercise2로 변경
                 .build();
@@ -133,8 +133,8 @@ public class ExerciseLogServiceTest {
                 .date(LocalDate.now())
                 .caloriesBurned(250.0)
                 .exerciseCount(1)
-                .startTime(LocalTime.of(8, 30))
-                .endTime(LocalTime.of(9, 30))
+                .startTime("08:30:00")  // String으로 변경
+                .endTime("09:30:00")    // String으로 변경
                 .userId(user.getId())
                 .exerciseId(exercise1.getId())
                 .build();
@@ -155,8 +155,8 @@ public class ExerciseLogServiceTest {
                 .date(LocalDate.now())
                 .caloriesBurned(200.0)
                 .exerciseCount(1)
-                .startTime(LocalTime.of(7, 30))
-                .endTime(LocalTime.of(8, 30))
+                .startTime("07:30:00")  // String으로 변경
+                .endTime("08:30:00")    // String으로 변경
                 .userId(user.getId())
                 .exerciseId(exercise1.getId())
                 .build();
@@ -181,8 +181,8 @@ public class ExerciseLogServiceTest {
                 .date(date)
                 .caloriesBurned(250.0)
                 .exerciseCount(1)
-                .startTime(LocalTime.of(6, 30))
-                .endTime(LocalTime.of(7, 30))
+                .startTime("06:30:00")  // String으로 변경
+                .endTime("07:30:00")    // String으로 변경
                 .userId(user.getId())
                 .exerciseId(exercise1.getId())
                 .build();
@@ -193,8 +193,8 @@ public class ExerciseLogServiceTest {
                 .date(date)
                 .caloriesBurned(150.0)
                 .exerciseCount(2)
-                .startTime(LocalTime.of(8, 0))
-                .endTime(LocalTime.of(8, 45))
+                .startTime("08:00:00")  // String으로 변경
+                .endTime("08:45:00")    // String으로 변경
                 .userId(user.getId())
                 .exerciseId(exercise2.getId())
                 .build();
@@ -209,3 +209,4 @@ public class ExerciseLogServiceTest {
         Assertions.assertEquals(3, response.getTotalExerciseCount());  // 총 운동 횟수 확인 (1 + 2)
     }
 }
+

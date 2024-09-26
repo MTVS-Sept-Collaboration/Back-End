@@ -3,6 +3,10 @@ package com.homefit.backend.character.controller;
 import com.homefit.backend.character.dto.CharacterUpdateRequestDto;
 import com.homefit.backend.character.service.CharacterService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +26,14 @@ public class CharacterController {
     private final CharacterService characterService;
 
     @Operation(summary = "유저 캐릭터 업데이트", description = "유저의 캐릭터 상태를 업데이트합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200", description = "유저 캐릭터 수정 성공",
+                    content = @Content(schema = @Schema(implementation = CharacterUpdateRequestDto.class))
+            ),
+            @ApiResponse(responseCode = "401", description = "인증 실패"),
+            @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음")
+    })
     @PutMapping("/{userId}")
     public ResponseEntity<?> updateCharacter(@PathVariable Long userId, @RequestBody CharacterUpdateRequestDto requestDto) {
         log.info("캐릭터 업데이트 요청: 사용자 ID = {}", userId);
@@ -31,6 +43,13 @@ public class CharacterController {
     }
 
     @Operation(summary = "유저 캐릭터 조회", description = "유저의 캐릭터 상태를 조회합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "유저 캐릭터 조회 성공",
+                    content = @Content(schema = @Schema(implementation = CharacterUpdateRequestDto.class))
+            ),
+            @ApiResponse(responseCode = "401", description = "인증 실패"),
+            @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음")
+    })
     @GetMapping("/{userId}")
     public ResponseEntity<CharacterUpdateRequestDto> getCharacter(@PathVariable Long userId) {
         log.info("캐릭터 조회 요청: 사용자 ID = {}", userId);

@@ -131,7 +131,12 @@ public class ExerciseServiceTest {
         exerciseRepository.save(exercise);
 
         // 유저 생성 및 운동 로그 생성
-        User user = new User("testUser", "password", RoleType.USER);  // RoleType 추가
+        User user = User.builder()
+                .userName("testUser")
+                .password("password")
+                .role(RoleType.USER)
+                .build();
+
         userRepository.save(user);
 
         ExerciseLogRequest logRequest = ExerciseLogRequest.builder()

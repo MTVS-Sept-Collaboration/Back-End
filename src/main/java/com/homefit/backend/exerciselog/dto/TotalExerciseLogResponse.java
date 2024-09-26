@@ -18,6 +18,6 @@ public class TotalExerciseLogResponse {
     @Schema(description = "총 소모된 칼로리", example = "1000.5")
     private Double totalCaloriesBurned;
 
-    @Schema(description = "총 운동 횟수", example = "50")
-    private Integer totalExerciseCount;
+    @Schema(description = "총 수행된 운동 횟수", example = "3")
+    private Integer totalExercisePerformances; // 운동 수행 횟수 (distinct 운동 종류가 아닌 기록 수)
 }

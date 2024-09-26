@@ -15,7 +15,7 @@ public class TimeUtilsTest {
     @DisplayName("올바른 시간 문자열을 LocalTime으로 변환하는 테스트")
     public void testConvertStringToLocalTime_Success() {
         // Given
-        String timeString = "12:30:45";
+        String timeString = "123045";
 
         // When
         LocalTime result = TimeUtils.convertStringToLocalTime(timeString);

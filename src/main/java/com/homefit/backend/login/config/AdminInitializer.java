@@ -2,7 +2,7 @@ package com.homefit.backend.login.config;
 
 import com.homefit.backend.login.dto.AdminDto;
 import com.homefit.backend.login.entity.RoleType;
-import com.homefit.backend.login.service.UserService;
+import com.homefit.backend.login.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class AdminInitializer implements ApplicationRunner {
 
-    private final UserService userService;
+    private final AuthService authService;
 
     @Override
     public void run(ApplicationArguments args) {
@@ -24,10 +24,10 @@ public class AdminInitializer implements ApplicationRunner {
             adminDto.setPassword("admin");
             adminDto.setRole(RoleType.ADMIN);
 
-            userService.registerInitialAdminUser(adminDto);
-            log.info("Initial admin user created successfully");
+            authService.registerInitialAdminUser(adminDto);
+            log.info("초기 관리자 계정 생성 성공");
         } catch (Exception e) {
-            log.error("Failed to create initial admin user", e);
+            log.error("초기 관리자 계정 생성 실패", e);
         }
     }
 }

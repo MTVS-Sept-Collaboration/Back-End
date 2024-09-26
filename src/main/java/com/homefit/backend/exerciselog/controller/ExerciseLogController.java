@@ -27,10 +27,10 @@ public class ExerciseLogController {
         this.exerciseLogService = exerciseLogService;
     }
 
-    @Operation(summary = "운동 기록 생성", description = "새로운 운동 기록을 생성합니다.")
+    @Operation(summary = "운동 기록 생성 또는 업데이트", description = "새로운 운동 기록을 생성하거나, 동일한 날짜 및 운동이 존재할 경우 업데이트합니다.")
     @PostMapping
-    public ResponseEntity<ExerciseLogResponse> createExerciseLog(@RequestBody ExerciseLogRequest request) {
-        ExerciseLogResponse response = exerciseLogService.createExerciseLog(request);
+    public ResponseEntity<ExerciseLogResponse> createOrUpdateExerciseLog(@RequestBody ExerciseLogRequest request) {
+        ExerciseLogResponse response = exerciseLogService.createOrUpdateExerciseLog(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 

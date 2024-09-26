@@ -129,11 +129,11 @@ public class ExerciseLogService {
         log.info("운동 기록 수정 요청: ID={}, userId={}, date={}, caloriesBurned={}, exerciseCount={}, startTime={}, endTime={}",
                 id, userId, request.getDate(), request.getCaloriesBurned(), request.getExerciseCount(), request.getStartTime(), request.getEndTime());
 
-        // 운동 기록 확인
+        // 운동 기록 확인 (특정 ID의 기록을 수정하는 것)
         ExerciseLog existingLog = exerciseLogRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("운동 기록을 찾을 수 없습니다. ID=" + id));
 
-        // 권한 확인
+        // 권한 확인 (수정 권한 확인)
         if (!existingLog.getUser().getId().equals(userId)) {
             throw new ValidationException("운동 기록 수정 권한이 없습니다.");
         }
@@ -142,11 +142,11 @@ public class ExerciseLogService {
         Exercise exercise = exerciseRepository.findById(request.getExerciseId())
                 .orElseThrow(() -> new NotFoundException("운동을 찾을 수 없습니다. ID=" + request.getExerciseId()));
 
-        // 수동 변환 로직 추가
+        // 수동 변환 로직 추가 (시작 시간과 끝 시간)
         LocalTime startTime = TimeUtils.convertStringToLocalTime(request.getStartTime());
         LocalTime endTime = TimeUtils.convertStringToLocalTime(request.getEndTime());
 
-        // 운동 기록 업데이트
+        // 운동 기록 업데이트 (기존 기록 수정)
         existingLog.updateExerciseLog(
                 request.getDate(),
                 request.getCaloriesBurned(),
@@ -154,7 +154,6 @@ public class ExerciseLogService {
                 startTime,  // 변환된 LocalTime 사용
                 endTime    // 변환된 LocalTime 사용
         );
-
         existingLog.setExercise(exercise);
 
         ExerciseLog updatedLog = exerciseLogRepository.save(existingLog);
@@ -162,9 +161,6 @@ public class ExerciseLogService {
         // 운동 기록 수정 시 로그 기록
         log.info("유저 ID={}가 운동 기록을 수정했습니다. 운동명={}, 수정된 횟수={}, 수정된 소모 칼로리={}",
                 userId, exercise.getExerciseName(), request.getExerciseCount(), request.getCaloriesBurned());
-
-        log.info("운동 기록 수정 완료: ID={}, userId={}, updatedExerciseCount={}, updatedCaloriesBurned={}",
-                updatedLog.getId(), userId, updatedLog.getExerciseCount(), updatedLog.getCaloriesBurned());
 
         return mapToExerciseLogResponse(updatedLog);
     }
@@ -199,60 +195,60 @@ public class ExerciseLogService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("유저를 찾을 수 없습니다. ID=" + userId));
 
-        // 해당 유저의 운동 기록 조회
+        // 해당 유저의 운동 기록 조회 (날짜별로 그룹화하지 않고 개별 기록을 그대로 조회)
         List<ExerciseLog> exerciseLogs = exerciseLogRepository.findByUser(user);
 
-        // 유저별 운동 횟수 조회 로그 기록
-        log.info("유저 ID={}가 조회한 총 운동 횟수: {}", userId, exerciseLogs.stream().mapToInt(ExerciseLog::getExerciseCount).sum());
+        // 유저별 운동 기록 조회 로그 기록
+        log.info("유저 ID={}가 조회한 총 운동 기록 수: {}", userId, exerciseLogs.size());
 
+        // 개별 운동 기록을 Response로 매핑하여 반환
         return exerciseLogs.stream()
                 .map(this::mapToExerciseLogResponse)
                 .collect(Collectors.toList());
     }
 
+
     // 특정 날짜에 해당하는 유저의 운동 기록 조회
     public TotalExerciseLogResponse getTotalExerciseLogsByUserAndDate(Long userId, LocalDate date) {
-        log.info("특정 유저의 특정 날짜 운동 기록 조회 요청 (합산 결과): userId={}, date={}", userId, date);
+        log.info("특정 유저의 특정 날짜 운동 기록 조회 요청: userId={}, date={}", userId, date);
 
         // 유저 확인
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("유저를 찾을 수 없습니다. ID=" + userId));
 
-        // 특정 날짜의 유저의 운동 기록을 조회 (해당 날짜의 운동 로그)
+        // 해당 유저의 특정 날짜 운동 기록 조회
         List<ExerciseLog> exerciseLogs = exerciseLogRepository.findByUserAndDateBetween(user, date, date);
 
-        // 각 운동 기록을 로그로 남기기
-        for (ExerciseLog exerciseLog : exerciseLogs) {
-            log.info("유저 ID={}가 {}일에 수행한 운동: 운동명={}, 횟수={}, 소모 칼로리={}",
-                    userId, date, exerciseLog.getExercise().getExerciseName(), exerciseLog.getExerciseCount(), exerciseLog.getCaloriesBurned());
-        }
-
-        // 총 칼로리 소모와 총 운동 횟수를 계산
+        // 총 소모 칼로리 및 총 운동 기록 횟수 계산
         double totalCalories = exerciseLogs.stream()
                 .mapToDouble(ExerciseLog::getCaloriesBurned)
-                .sum(); // 모든 칼로리 소모 합산
+                .sum();
 
-        int totalExerciseCount = exerciseLogs.stream()
-                .mapToInt(ExerciseLog::getExerciseCount)
-                .sum(); // 모든 운동 횟수 합산
+        int totalExercisePerformances = exerciseLogs.size(); // 총 운동 수행 횟수 계산
 
-        // 운동 로그 조회 로그 기록 (총합 결과)
-        log.info("유저 ID={}가 {}일에 수행한 총 운동 횟수: {}, 총 소모 칼로리: {}", userId, date, totalExerciseCount, totalCalories);
+        log.info("유저 ID={}가 {}일에 수행한 총 운동 기록 수: {}, 총 소모 칼로리: {}",
+                userId, date, totalExercisePerformances, totalCalories);
 
-        // 새로운 TotalExerciseLogResponse로 반환
         return TotalExerciseLogResponse.builder()
                 .date(date)
                 .totalCaloriesBurned(totalCalories)
-                .totalExerciseCount(totalExerciseCount)
+                .totalExercisePerformances(totalExercisePerformances)
                 .build();
     }
 
+
+
+
+
+
+    /**
+     * 운동 기록을 생성하거나 업데이트하는 메서드.
+     * 동일한 운동 기록이 있어도 새로운 기록으로 추가하며, 소모 칼로리와 운동 횟수를 각각 저장.
+     * 기존 기록을 확인하지 않고, 요청된 데이터를 바탕으로 새로운 운동 기록을 생성하고 저장.
+     */
     @Transactional
     public ExerciseLogResponse createOrUpdateExerciseLog(ExerciseLogRequest request) {
         log.info("운동 기록 생성 요청: userId={}, date={}, exerciseId={}", request.getUserId(), request.getDate(), request.getExerciseId());
-
-        // 유효성 검사
-        validateExerciseLogRequest(request);
 
         // 유저 확인
         User user = userRepository.findById(request.getUserId())
@@ -262,46 +258,28 @@ public class ExerciseLogService {
         Exercise exercise = exerciseRepository.findById(request.getExerciseId())
                 .orElseThrow(() -> new NotFoundException("운동을 찾을 수 없습니다. ID=" + request.getExerciseId()));
 
-        // 동일한 날짜에 동일한 운동이 있는지 확인
-        Optional<ExerciseLog> existingLogOpt = exerciseLogRepository.findByUserAndDateAndExercise(user, request.getDate(), exercise);
-
         // 수동 변환 로직 추가
         LocalTime startTime = TimeUtils.convertStringToLocalTime(request.getStartTime());
         LocalTime endTime = TimeUtils.convertStringToLocalTime(request.getEndTime());
 
-        ExerciseLog savedLog;
-        if (existingLogOpt.isPresent()) {
-            // 동일한 날짜에 동일한 운동이 이미 존재하는 경우, 운동 횟수와 소모 칼로리 합산
-            ExerciseLog existingLog = existingLogOpt.get();
-            existingLog.updateExerciseLog(
-                    existingLog.getDate(),
-                    existingLog.getCaloriesBurned() + request.getCaloriesBurned(),  // 소모 칼로리 합산
-                    existingLog.getExerciseCount() + request.getExerciseCount(),    // 운동 횟수 합산
-                    startTime,
-                    endTime
-            );
-            savedLog = exerciseLogRepository.save(existingLog);
-            log.info("기존 운동 기록 업데이트: ID={}, userId={}, exerciseId={}, updatedExerciseCount={}, updatedCaloriesBurned={}",
-                    savedLog.getId(), user.getId(), exercise.getId(), savedLog.getExerciseCount(), savedLog.getCaloriesBurned());
+        // 새로운 운동 기록 생성
+        ExerciseLog newLog = new ExerciseLog(
+                request.getDate(),
+                request.getCaloriesBurned(),
+                request.getExerciseCount(),
+                startTime,
+                endTime,
+                user,
+                exercise
+        );
 
-        } else {
-            // 새로운 운동 기록 생성
-            ExerciseLog newLog = new ExerciseLog(
-                    request.getDate(),
-                    request.getCaloriesBurned(),
-                    request.getExerciseCount(),
-                    startTime,
-                    endTime,
-                    user,
-                    exercise
-            );
-            savedLog = exerciseLogRepository.save(newLog);
-            log.info("새로운 운동 기록 생성: ID={}, userId={}, exerciseId={}, exerciseCount={}, caloriesBurned={}",
-                    savedLog.getId(), user.getId(), exercise.getId(), savedLog.getExerciseCount(), savedLog.getCaloriesBurned());
-        }
+        ExerciseLog savedLog = exerciseLogRepository.save(newLog);
+        log.info("새로운 운동 기록 생성: ID={}, userId={}, exerciseId={}, exerciseCount={}, caloriesBurned={}",
+                savedLog.getId(), user.getId(), exercise.getId(), savedLog.getExerciseCount(), savedLog.getCaloriesBurned());
 
         return mapToExerciseLogResponse(savedLog);
     }
+
 
 
     // ExerciseLog 엔티티를 ExerciseLogResponse로 변환

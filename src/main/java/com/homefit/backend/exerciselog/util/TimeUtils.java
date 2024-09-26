@@ -5,6 +5,6 @@ import java.time.format.DateTimeFormatter;
 
 public class TimeUtils {
     public static LocalTime convertStringToLocalTime(String timeString) {
-        return LocalTime.parse(timeString, DateTimeFormatter.ofPattern("HH:mm:ss"));
+        return LocalTime.parse(timeString, DateTimeFormatter.ofPattern("HHmmss"));
     }
 }

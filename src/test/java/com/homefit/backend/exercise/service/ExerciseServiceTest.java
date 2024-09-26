@@ -6,7 +6,13 @@ import com.homefit.backend.exercise.entity.Exercise;
 import com.homefit.backend.exercise.repository.ExerciseRepository;
 import com.homefit.backend.category.exercise.entity.ExerciseCategory;
 import com.homefit.backend.category.exercise.repository.ExerciseCategoryRepository;
+import com.homefit.backend.exerciselog.dto.ExerciseLogRequest;
+import com.homefit.backend.exerciselog.entity.ExerciseLog;
 import com.homefit.backend.exerciselog.service.ExerciseLogService;
+import com.homefit.backend.global.exception.model.ValidationException;
+import com.homefit.backend.login.entity.RoleType;
+import com.homefit.backend.login.entity.User;
+import com.homefit.backend.login.repository.UserRepository;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -14,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,11 +34,15 @@ public class ExerciseServiceTest {
     @Autowired
     private ExerciseRepository exerciseRepository;
 
+
     @Autowired
     private ExerciseCategoryRepository exerciseCategoryRepository;
 
     @Autowired
     private ExerciseLogService exerciseLogService;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Test
     @DisplayName("운동 생성 테스트")
@@ -110,6 +121,39 @@ public class ExerciseServiceTest {
     }
 
     @Test
+    @DisplayName("운동 삭제 시 운동 로그가 있는 경우 예외 발생 테스트")
+    public void testDeleteExerciseWithLogs() {
+        // Given
+        ExerciseCategory category = new ExerciseCategory("근력운동");
+        exerciseCategoryRepository.save(category);
+
+        Exercise exercise = new Exercise("푸시업", category);
+        exerciseRepository.save(exercise);
+
+        // 유저 생성 및 운동 로그 생성
+        User user = new User("testUser", "password", RoleType.USER);  // RoleType 추가
+        userRepository.save(user);
+
+        ExerciseLogRequest logRequest = ExerciseLogRequest.builder()
+                .userId(user.getId())
+                .exerciseId(exercise.getId())
+                .date(LocalDate.now())
+                .caloriesBurned(100.0)
+                .exerciseCount(10)
+                .startTime("120000")
+                .endTime("123000")
+                .build();
+
+        exerciseLogService.createExerciseLog(logRequest);
+
+        // When / Then
+        Assertions.assertThatThrownBy(() -> exerciseService.deleteExercise(exercise.getId()))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("이 운동은 운동 로그에 사용되고 있으므로 삭제할 수 없습니다.");
+    }
+
+
+    @Test
     @DisplayName("특정 운동 조회 테스트")
     public void testGetExerciseById() {
         // Given
@@ -150,4 +194,5 @@ public class ExerciseServiceTest {
         Assertions.assertThat(exercises).extracting(ExerciseResponse::getExerciseName)
                 .containsExactlyInAnyOrder("푸시업", "런지");
     }
+
 }

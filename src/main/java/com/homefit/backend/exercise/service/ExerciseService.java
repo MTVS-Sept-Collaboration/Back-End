@@ -140,7 +140,7 @@ public class ExerciseService {
                 .orElseThrow(() -> new NotFoundException("운동을 찾을 수 없습니다."));
 
         // 운동과 관련된 로그가 있는지 확인 (ExerciseLogService 사용)
-        boolean hasLogs = exerciseLogService.existsByExercise(exercise);  // 서비스로 처리
+        boolean hasLogs = exerciseLogService.hasLogsForExercise(exercise.getId());  // 수정된 메서드 사용
         if (hasLogs) {
             throw new ValidationException("이 운동은 운동 로그에 사용되고 있으므로 삭제할 수 없습니다.");
         }

@@ -1,5 +1,7 @@
 package com.homefit.backend.login.service;
 
+import com.homefit.backend.character.entity.Character;
+import com.homefit.backend.character.service.CharacterService;
 import com.homefit.backend.login.config.provider.JwtTokenProvider;
 import com.homefit.backend.login.dto.AdminDto;
 import com.homefit.backend.login.dto.LoginRequestDto;
@@ -19,8 +21,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.util.Optional;
-
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -29,10 +29,13 @@ import static org.mockito.Mockito.*;
 public class LoginServiceTest {
 
     @InjectMocks
-    private UserService userService;
+    private AuthService authService;
 
-    @InjectMocks
-    private AuthenticationService authenticationService;
+    @Mock
+    private CharacterService characterService;
+
+    @Mock
+    private UserService userService;
 
     @Mock
     private UserRepository userRepository;
@@ -54,7 +57,7 @@ public class LoginServiceTest {
     @BeforeEach
     void setUp() {
         closeable = MockitoAnnotations.openMocks(this);
-        authenticationService = new AuthenticationService(authenticationManager, jwtTokenProvider, userService);
+        authService = new AuthService(userRepository, userInfoRepository, passwordEncoder, userService, characterService, jwtTokenProvider, authenticationManager);
     }
 
     @AfterEach
@@ -77,18 +80,35 @@ public class LoginServiceTest {
 
         when(userRepository.existsByUserName(anyString())).thenReturn(false);
         when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
-        when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArguments()[0]);
+        when(userRepository.save(any(User.class))).thenAnswer(i -> {
+            User savedUser = (User) i.getArguments()[0];
+            return new User(1L, savedUser.getUserName(), savedUser.getPassword(), savedUser.getRole());
+        });
         when(userInfoRepository.save(any(UserInfo.class))).thenAnswer(i -> i.getArguments()[0]);
+        when(characterService.createCharacterForUser(any(User.class))).thenReturn(
+                Character.builder()
+                        .id(1L)
+                        .user(new User(1L, "testUser", "encodedPassword", RoleType.USER))
+                        .body(1L)
+                        .build()
+        );
 
         // Act
-        User result = userService.registerUser(userDto);
+        User result = authService.registerUser(userDto);
 
         // Assert
         assertNotNull(result);
+        assertEquals(1L, result.getId());
         assertEquals("testUser", result.getUserName());
         assertEquals("encodedPassword", result.getPassword());
         assertEquals(RoleType.USER, result.getRole());
+
         verify(userInfoRepository).save(any(UserInfo.class));
+        verify(characterService).createCharacterForUser(argThat(user ->
+                user.getId() == 1L &&
+                        user.getUserName().equals("testUser") &&
+                        user.getRole() == RoleType.USER
+        ));
     }
 
     @DisplayName(value = "#02. 로그인 성공 테스트")
@@ -104,20 +124,22 @@ public class LoginServiceTest {
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
                 .thenReturn(authentication);
 
-        User user = new User(1L, "testUser", "encodedPassword", RoleType.USER);
-        when(userRepository.findByUserName(anyString())).thenReturn(Optional.of(user));
+        User user = spy(new User(1L, "testUser", "encodedPassword", RoleType.USER));
+        when(userService.findByUserName(anyString())).thenReturn(user);
 
         when(jwtTokenProvider.generateToken(any(User.class))).thenReturn("jwtToken");
 
         // Act
-        LoginResponseDto result = authenticationService.login(loginRequestDto);
+        LoginResponseDto result = authService.login(loginRequestDto);
 
         // Assert
         assertNotNull(result);
         assertEquals(1L, result.getUserId());
         assertEquals("jwtToken", result.getJwtToken());
         verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
-        verify(userRepository).findByUserName(eq("testUser"));
+        verify(userService).findByUserName(eq("testUser"));
+        verify(user).updateLoginTime();
+        verify(userRepository).save(user);
         verify(jwtTokenProvider).generateToken(user);
     }
 
@@ -133,7 +155,7 @@ public class LoginServiceTest {
         when(userRepository.existsByUserName(anyString())).thenReturn(true);
 
         // Act & Assert
-        assertThrows(RuntimeException.class, () -> userService.registerUser(userDto));
+        assertThrows(RuntimeException.class, () -> authService.registerUser(userDto));
     }
 
     @DisplayName(value = "#04. 관리자 회원가입 성공 테스트")
@@ -151,12 +173,30 @@ public class LoginServiceTest {
         when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArguments()[0]);
 
         // Act
-        User result = userService.registerAdminUser(adminDto);
+        User result = authService.registerAdminUser(adminDto);
 
         // Assert
         assertNotNull(result);
         assertEquals("adminUser", result.getUserName());
         assertEquals("encodedAdminPassword", result.getPassword());
         assertEquals(RoleType.ADMIN, result.getRole());
+    }
+
+    @DisplayName(value = "#05. 로그아웃 성공 테스트")
+    @Test
+    @Order(5)
+    void logout_Success() {
+        // Arrange
+        String userName = "testUser";
+        User user = spy(new User(1L, userName, "encodedPassword", RoleType.USER));
+        when(userService.findByUserName(userName)).thenReturn(user);
+
+        // Act
+        authService.logout(userName);
+
+        // Assert
+        verify(userService).findByUserName(userName);
+        verify(user).updateLogoutTime();
+        verify(userRepository).save(user);
     }
 }

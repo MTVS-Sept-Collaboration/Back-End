@@ -8,6 +8,7 @@ import com.homefit.backend.category.exercise.repository.ExerciseCategoryReposito
 import com.homefit.backend.exerciselog.dto.ExerciseLogRequest;
 import com.homefit.backend.exerciselog.dto.ExerciseLogResponse;
 import com.homefit.backend.exerciselog.dto.TotalExerciseLogResponse;
+import com.homefit.backend.exerciselog.entity.ExerciseLog;
 import com.homefit.backend.exerciselog.repository.ExerciseLogRepository;
 import com.homefit.backend.login.entity.RoleType;
 import com.homefit.backend.login.entity.User;
@@ -25,6 +26,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.UUID;
 
 @SpringBootTest
 @Transactional
@@ -53,7 +55,7 @@ public class ExerciseLogServiceTest {
     public void setUp() {
         // User 객체 생성 및 저장
         user = userRepository.save(User.builder()
-                .userName("testUser")
+                .userName("testUser" + UUID.randomUUID())  // 고유한 사용자명 생성
                 .password("password123")
                 .role(RoleType.USER)
                 .build());
@@ -74,8 +76,8 @@ public class ExerciseLogServiceTest {
                 .date(LocalDate.now())  // LocalDate로 변경
                 .caloriesBurned(300.5)
                 .exerciseCount(2)
-                .startTime("10:15:30")  // String으로 변경
-                .endTime("11:45:30")    // String으로 변경
+                .startTime("101530")  // String으로 변경
+                .endTime("114530")    // String으로 변경
                 .userId(user.getId())
                 .exerciseId(exercise1.getId())  // 단일 exerciseId로 변경
                 .build();
@@ -98,8 +100,8 @@ public class ExerciseLogServiceTest {
                 .date(LocalDate.now())
                 .caloriesBurned(200.0)
                 .exerciseCount(1)
-                .startTime("09:30:00")  // String으로 변경
-                .endTime("10:30:00")    // String으로 변경
+                .startTime("093000")  // String으로 변경
+                .endTime("103000")    // String으로 변경
                 .userId(user.getId())
                 .exerciseId(exercise1.getId())
                 .build();
@@ -109,8 +111,8 @@ public class ExerciseLogServiceTest {
                 .date(LocalDate.now())
                 .caloriesBurned(350.0)
                 .exerciseCount(2)
-                .startTime("09:00:00")  // String으로 변경
-                .endTime("10:00:00")    // String으로 변경
+                .startTime("090000")  // String으로 변경
+                .endTime("100000")    // String으로 변경
                 .userId(user.getId())
                 .exerciseId(exercise2.getId())  // 운동을 exercise2로 변경
                 .build();
@@ -133,8 +135,8 @@ public class ExerciseLogServiceTest {
                 .date(LocalDate.now())
                 .caloriesBurned(250.0)
                 .exerciseCount(1)
-                .startTime("08:30:00")  // String으로 변경
-                .endTime("09:30:00")    // String으로 변경
+                .startTime("083000")  // String으로 변경
+                .endTime("093000")    // String으로 변경
                 .userId(user.getId())
                 .exerciseId(exercise1.getId())
                 .build();
@@ -155,8 +157,8 @@ public class ExerciseLogServiceTest {
                 .date(LocalDate.now())
                 .caloriesBurned(200.0)
                 .exerciseCount(1)
-                .startTime("07:30:00")  // String으로 변경
-                .endTime("08:30:00")    // String으로 변경
+                .startTime("073000")  // String으로 변경
+                .endTime("083000")    // String으로 변경
                 .userId(user.getId())
                 .exerciseId(exercise1.getId())
                 .build();
@@ -181,8 +183,8 @@ public class ExerciseLogServiceTest {
                 .date(date)
                 .caloriesBurned(250.0)
                 .exerciseCount(1)
-                .startTime("06:30:00")  // String으로 변경
-                .endTime("07:30:00")    // String으로 변경
+                .startTime("063000")  // String으로 변경
+                .endTime("073000")    // String으로 변경
                 .userId(user.getId())
                 .exerciseId(exercise1.getId())
                 .build();
@@ -193,8 +195,8 @@ public class ExerciseLogServiceTest {
                 .date(date)
                 .caloriesBurned(150.0)
                 .exerciseCount(2)
-                .startTime("08:00:00")  // String으로 변경
-                .endTime("08:45:00")    // String으로 변경
+                .startTime("080000")  // String으로 변경
+                .endTime("084500")    // String으로 변경
                 .userId(user.getId())
                 .exerciseId(exercise2.getId())
                 .build();
@@ -207,6 +209,53 @@ public class ExerciseLogServiceTest {
         Assertions.assertNotNull(response);  // 응답이 null이 아닌지 확인
         Assertions.assertEquals(400.0, response.getTotalCaloriesBurned());  // 총 소모된 칼로리 확인 (250 + 150)
         Assertions.assertEquals(3, response.getTotalExerciseCount());  // 총 운동 횟수 확인 (1 + 2)
+    }
+
+    @Test
+    @DisplayName("같은 날짜에 동일한 운동 기록이 합산되는지 테스트")
+    public void testMergeExerciseLogsOnSameDate() {
+        // Given
+        ExerciseCategory category = new ExerciseCategory("근력운동");
+        exerciseCategoryRepository.save(category);
+
+        Exercise exercise = new Exercise("푸시업", category);
+        exerciseRepository.save(exercise);
+
+        User user = new User("testUser", "password", RoleType.USER);
+        userRepository.save(user);
+
+        // 첫 번째 운동 기록 생성
+        ExerciseLogRequest logRequest1 = ExerciseLogRequest.builder()
+                .userId(user.getId())
+                .exerciseId(exercise.getId())
+                .date(LocalDate.of(2024, 9, 26))
+                .caloriesBurned(100.0)
+                .exerciseCount(10)
+                .startTime("120000")
+                .endTime("123000")
+                .build();
+        exerciseLogService.createOrUpdateExerciseLog(logRequest1);
+
+        // 두 번째 운동 기록 생성 (같은 날짜, 동일한 운동)
+        ExerciseLogRequest logRequest2 = ExerciseLogRequest.builder()
+                .userId(user.getId())
+                .exerciseId(exercise.getId())
+                .date(LocalDate.of(2024, 9, 26))  // 같은 날짜
+                .caloriesBurned(150.0)            // 다른 칼로리
+                .exerciseCount(20)                // 다른 횟수
+                .startTime("130000")
+                .endTime("133000")
+                .build();
+        exerciseLogService.createOrUpdateExerciseLog(logRequest2);
+
+        // When
+        List<ExerciseLog> logs = exerciseLogRepository.findByUserAndDate(user, LocalDate.of(2024, 9, 26));
+
+        // Then
+        org.assertj.core.api.Assertions.assertThat(logs).hasSize(1);  // 하나의 기록만 존재해야 함
+        ExerciseLog mergedLog = logs.get(0);
+        org.assertj.core.api.Assertions.assertThat(mergedLog.getCaloriesBurned()).isEqualTo(250.0);  // 칼로리 합산 확인
+        org.assertj.core.api.Assertions.assertThat(mergedLog.getExerciseCount()).isEqualTo(30);      // 횟수 합산 확인
     }
 }
 

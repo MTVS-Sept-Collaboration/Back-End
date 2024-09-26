@@ -42,6 +42,7 @@ src/main/resources/keystore.p12
 application.log
 mysql_data
 redis_data
+grafana_data
 logs
 application.yml
 application-dev.yml
@@ -49,4 +50,7 @@ application-prod.yml
 docker-compose.yml
 Dockerfile
 execution.bat
+prometheus.yml
+ssl
+
 

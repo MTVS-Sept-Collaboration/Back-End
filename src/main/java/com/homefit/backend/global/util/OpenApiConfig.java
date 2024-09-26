@@ -44,7 +44,7 @@ public class OpenApiConfig {
                         new Server().url("https://localhost:8081").description("Local Server"), // 로컬 서버
                         new Server().url("https://125.132.216.190:12500").description("Dev-01 Server"), // 개발 서버(맥)
                         new Server().url("https://125.132.216.190:12502").description("Dev-02 Server"), // 개발 서버(MSI)
-                        new Server().url("https://homefit.my").description("Production Server") // 프로덕션 서버
+                        new Server().url("https://homefit.my:12502").description("Production Server") // 프로덕션 서버
                 ));
     }
 }

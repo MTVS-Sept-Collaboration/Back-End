@@ -32,8 +32,8 @@ public class ExerciseLog extends BaseEntity {
     @JoinColumn(name = "user_id")
     private User user;
 
-    @OneToOne
-    @JoinColumn(name = "exercise_id")  // 운동과 1:1 관계 설정
+    @ManyToOne  // @OneToOne -> @ManyToOne으로 변경
+    @JoinColumn(name = "exercise_id")  // 운동과 1:N 관계 설정
     private Exercise exercise;
 
     public ExerciseLog(LocalDate date, Double caloriesBurned, Integer exerciseCount, LocalTime startTime, LocalTime endTime, User user, Exercise exercise) {

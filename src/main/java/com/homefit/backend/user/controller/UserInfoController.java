@@ -43,15 +43,12 @@ public class UserInfoController {
             @PathVariable(value = "id") Long userId,
             @RequestBody String nickName
     ) {
-        log.info("사용자 닉네임 수정 요청: 사용자 ID = {}", userId);
         try {
             // 쌍따옴표 제거
             nickName = nickName.replaceAll("^\"|\"$", "");
             userInfoService.updateNickName(userId, nickName);
-            log.info("사용자 닉네임 수정 성공: 사용자 ID = {}", userId);
             return ResponseEntity.ok("사용자의 닉네임이 성공적으로 변경되었어요!");
         } catch (Exception e) {
-            log.error("사용자 닉네임 수정 실패: 사용자 ID = {}", userId, e);
             return ResponseEntity.badRequest().body("닉네임 변경 중 오류가 발생했습니다.");
         }
     }
@@ -72,13 +69,10 @@ public class UserInfoController {
             @PathVariable(value = "id") Long userId,
             @RequestBody LocalDate birthday
     ) {
-        log.info("사용자 생년월일 수정 요청: 사용자 ID = {}", userId);
         try {
             userInfoService.updateBirthday(userId, birthday);
-            log.info("사용자 생년월일 수정 성공: 사용자 ID = {}", userId);
             return ResponseEntity.ok("사용자의 생년월일이 성공적으로 변경되었어요!");
         } catch (Exception e) {
-            log.error("사용자 생년월일 수정 실패: 사용자 ID = {}", userId, e);
             return ResponseEntity.badRequest().body("생년월일 변경 중 오류가 발생했습니다.");
         }
     }
@@ -99,13 +93,10 @@ public class UserInfoController {
             @PathVariable(value = "id") Long userId,
             @RequestBody UserPhysicalInfoDto userPhysicalInfoDto
     ) {
-        log.info("사용자 신체 정보 수정 요청: 사용자 ID = {}", userId);
         try {
             userInfoService.updateUserPhysicalInfo(userId, userPhysicalInfoDto);
-            log.info("사용자 신체 정보 수정 성공: 사용자 ID = {}", userId);
             return ResponseEntity.ok("사용자의 신체 정보가 성공적으로 변경되었어요!");
         } catch (Exception e) {
-            log.error("사용자 신체 정보 수정 실패: 사용자 ID = {}", userId, e);
             return ResponseEntity.badRequest().body("신체 정보 변경 중 오류가 발생했습니다.");
         }
     }
@@ -123,13 +114,10 @@ public class UserInfoController {
             @PathVariable(value = "id") Long userId,
             @RequestBody UserInfoDto userInfoDto
     ) {
-        log.info("사용자 전체 정보 수정 요청: 사용자 ID = {}", userId);
         try {
             userInfoService.updateUserInfo(userId, userInfoDto);
-            log.info("사용자 전체 정보 수정 성공: 사용자 ID = {}", userId);
             return ResponseEntity.ok("사용자의 모든 정보가 성공적으로 변경되었어요!");
         } catch (Exception e) {
-            log.error("사용자 전체 정보 수정 실패: 사용자 ID = {}", userId, e);
             return ResponseEntity.badRequest().body("정보 변경 중 오류가 발생했습니다.");
         }
     }
@@ -149,13 +137,10 @@ public class UserInfoController {
     public ResponseEntity<UserInfoDto> getUserInfo(
             @PathVariable(value = "id") Long userId
     ) {
-        log.info("사용자 정보 조회 요청: 사용자 ID = {}", userId);
         try {
             UserInfoDto userInfoDto = userInfoService.getUserInfo(userId);
-            log.info("사용자 정보 조회 성공: 사용자 ID = {}", userId);
             return ResponseEntity.ok(userInfoDto);
         } catch (Exception e) {
-            log.error("사용자 정보 조회 실패: 사용자 ID = {}", userId, e);
             return ResponseEntity.badRequest().body(null);
         }
     }

@@ -1,6 +1,5 @@
 package com.homefit.backend.character.dto;
 
-import com.homefit.backend.character.entity.Character;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

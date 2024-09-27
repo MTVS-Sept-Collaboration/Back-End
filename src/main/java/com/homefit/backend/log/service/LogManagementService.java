@@ -18,10 +18,10 @@ public class LogManagementService {
     private static final String LOG_FILE_PATH = "logs/application.log";
     private final ObjectMapper objectMapper;
 
-    public String getLogsAsJson(int page, int limit, String sortOrder, String logLevel) throws IOException {
+    public LogResponse getLogsAsJson(int page, int limit, String sortOrder, String logLevel) throws IOException {
         List<LogEntry> allLogs = Files.readAllLines(Paths.get(LOG_FILE_PATH)).stream()
                 .map(this::parseLogEntry)
-                .filter(log -> logLevel == null || logLevel.isEmpty() || logLevel.equals(log.level))
+                .filter(log -> logLevel == null || logLevel.isEmpty() || logLevel.equalsIgnoreCase(log.level))
                 .collect(Collectors.toList());
 
         if ("desc".equalsIgnoreCase(sortOrder)) {
@@ -33,35 +33,49 @@ public class LogManagementService {
         int startIndex = (page - 1) * limit;
         int endIndex = Math.min(startIndex + limit, totalLogs);
 
-        List<LogEntry> paginatedLogs = allLogs.subList(startIndex, endIndex);
+//        if (startIndex >= totalLogs) {
+//            startIndex = 0;
+//            page = 1;
+//        }
 
-        LogResponse response = new LogResponse(paginatedLogs, page, totalPages, totalLogs);
-        return objectMapper.writeValueAsString(response);
+        List<LogEntry> paginatedLogs = allLogs.subList(startIndex, endIndex);
+        return new LogResponse(paginatedLogs, page, totalPages, totalLogs);
     }
 
     private LogEntry parseLogEntry(String logLine) {
-        String[] parts = logLine.split(" ", 5);
-        if (parts.length < 5) {
-            return new LogEntry("Unknown", "Unknown", "Unknown", logLine);
+        String[] parts = logLine.split(" ", 4);
+        if (parts.length < 4) {
+            return new LogEntry("Unknown", "Unknown", "Unknown", "Unknown", logLine);
         }
-        return new LogEntry(parts[0] + " " + parts[1], parts[2], parts[3], parts[4]);
+        String timestamp = parts[0] + " " + parts[1];
+        String level = parts[2];
+
+        // 로거와 메시지 부분을 분리합니다.
+        String[] loggerAndMessage = parts[3].split(" - ", 2);
+        String fullLogger = loggerAndMessage[0];
+        String shortLogger = fullLogger.substring(fullLogger.lastIndexOf('.') + 1);
+        String message = loggerAndMessage.length > 1 ? loggerAndMessage[1] : "";
+
+        return new LogEntry(timestamp, level, fullLogger, shortLogger, message);
     }
 
-    private static class LogEntry {
+    public static class LogEntry {
         public String timestamp;
         public String level;
-        public String logger;
+        public String fullLogger;
+        public String shortLogger;
         public String message;
 
-        public LogEntry(String timestamp, String level, String logger, String message) {
+        public LogEntry(String timestamp, String level, String fullLogger, String shortLogger, String message) {
             this.timestamp = timestamp;
             this.level = level;
-            this.logger = logger;
+            this.fullLogger = fullLogger;
+            this.shortLogger = shortLogger;
             this.message = message;
         }
     }
 
-    private static class LogResponse {
+    public static class LogResponse {
         public List<LogEntry> logs;
         public int currentPage;
         public int totalPages;

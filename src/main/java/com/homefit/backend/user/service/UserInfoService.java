@@ -48,7 +48,7 @@ public class UserInfoService {
             UserInfo userInfo = getUserInfoById(userId);
             userInfo.updateBirthday(birthday);
             userInfoRepository.save(userInfo);
-            log.info("사용자 생년월일 수정 완료: 사용자 ID = {}, 변경된 생년월일 = {}\"", userId, birthday);
+            log.info("사용자 생년월일 수정 완료: 사용자 ID = {}, 변경된 생년월일 = {}", userId, birthday);
         } catch (Exception e) {
             log.error("사용자 생년월일 수정 중 오류 발생: 사용자 ID = {}", userId, e);
             throw e;
